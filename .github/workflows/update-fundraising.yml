@@ -15,19 +15,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Install dependencies
-        run: apt-get update && apt-get install -y jq
-      
-      - name: Fetch fundraising amount
+      - name: Test API connection
         run: |
-          AMOUNT=$(curl -s https://www.extra-life.org/api/1.6/teams/73449 | jq '.sumDonations')
+          echo "Testing API connection..."
+          curl -v https://www.extra-life.org/api/1.6/teams/73449
+      
+      - name: Fetch fundraising amount with error handling
+        run: |
+          echo "Fetching fundraising data..."
+          mkdir -p data
+          curl -s -o /tmp/response.json https://www.extra-life.org/api/1.6/teams/73449
+          echo "Response received:"
+          cat /tmp/response.json
+          echo ""
+          echo "Extracting amount..."
+          AMOUNT=$(cat /tmp/response.json | grep -o '"sumDonations":[^,}]*' | cut -d':' -f2)
+          echo "Amount: $AMOUNT"
           echo "$AMOUNT" > data/fundraising.json
-          echo "Amount raised: $AMOUNT"
       
       - name: Commit and push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/fundraising.json
-          git commit -m "chore: update fundraising data" || echo "No changes to commit"
+          git commit -m "chore: update fundraising data" || echo "No changes"
           git push
