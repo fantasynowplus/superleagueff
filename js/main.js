@@ -11,21 +11,18 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function fetchRaisedAmount() {
-  const teamId = 73449;
-  const apiUrl = `https://www.extra-life.org/api/1.6/teams/${teamId}`;
-
-  fetch(apiUrl)
+  fetch('data/fundraising.json')
     .then(response => {
       if (!response.ok) {
-        throw new Error('API request failed');
+        throw new Error('Failed to load fundraising data');
       }
       return response.json();
     })
-    .then(data => {
+    .then(amount => {
       const raisedElement = document.getElementById('raised-amount');
-      if (raisedElement && data.sumDonations !== undefined) {
-        const amount = Math.round(data.sumDonations * 100) / 100;
-        raisedElement.textContent = '$' + amount.toLocaleString('en-US', {
+      if (raisedElement && typeof amount === 'number') {
+        const roundedAmount = Math.round(amount * 100) / 100;
+        raisedElement.textContent = '$' + roundedAmount.toLocaleString('en-US', {
           minimumFractionDigits: 0,
           maximumFractionDigits: 0
         });
