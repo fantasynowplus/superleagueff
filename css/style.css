@@ -245,6 +245,16 @@ nav.main-nav a.donate-link:hover {
   color: var(--ash);
 }
 
+.champions-grid {
+  margin-top: 56px;
+  border: 2px solid var(--field-light);
+  border-radius: 6px;
+  background: var(--field-dark);
+  box-shadow: 0 0 0 6px rgba(13, 39, 64, 0.35), inset 0 0 40px rgba(0,0,0,0.4);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
 .yardline {
   display: flex;
   align-items: center;
@@ -534,4 +544,5 @@ footer.site-footer nav a:hover { color: var(--chalk); }
   .scoreboard { grid-template-columns: 1fr; }
   .scoreboard-cell { border-right: none; border-bottom: 1px solid var(--field-light); }
   .scoreboard-cell:last-child { border-bottom: none; }
+  .champions-grid { grid-template-columns: 1fr; }
 }
