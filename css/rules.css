@@ -110,8 +110,6 @@
 }
 
 .subrule-group {
-  margin-top: 20px;
-  padding-top: 20px;
   margin-bottom: 20px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--field-light);
@@ -125,7 +123,6 @@
 
 .rule-card .subrule-group {
   padding: 0 22px;
-  margin: 0;
   border-bottom: 1px dashed var(--field-light);
 }
 
