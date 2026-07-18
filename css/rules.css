@@ -1,0 +1,358 @@
+.section-intro {
+  max-width: 720px;
+  margin-bottom: 56px;
+  padding: 26px 28px;
+  background: rgba(226, 111, 15, 0.08);
+  border-left: 4px solid var(--gold);
+  border-radius: 4px;
+  color: var(--chalk-dim);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.rule-card {
+  border: 1px solid var(--field-light);
+  border-radius: 8px;
+  background: rgba(6, 25, 43, 0.6);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rule-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 8px 24px rgba(226, 111, 15, 0.12);
+}
+
+.rule-card-header {
+  background: linear-gradient(135deg, rgba(226, 111, 15, 0.12) 0%, rgba(226, 111, 15, 0.06) 100%);
+  border-bottom: 2px solid var(--field-light);
+  padding: 20px 22px;
+}
+
+.rule-card-header h2 {
+  font-size: 22px;
+  margin: 0;
+  color: var(--chalk);
+}
+
+.card-subtitle {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: var(--ash);
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.rule-card > p {
+  padding: 20px 22px;
+  margin: 0;
+  color: var(--chalk-dim);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.rule-card > p:first-of-type {
+  padding-top: 24px;
+}
+
+.rule-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rule-card > .rule-list {
+  padding: 20px 22px;
+  margin: 0;
+}
+
+.rule-list li {
+  padding: 10px 0;
+  color: var(--chalk-dim);
+  font-size: 15px;
+  line-height: 1.6;
+  position: relative;
+  padding-left: 20px;
+}
+
+.rule-list li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: var(--gold-bright);
+  font-size: 14px;
+}
+
+.rule-list li strong {
+  color: var(--chalk);
+  font-weight: 600;
+}
+
+.rule-list.compact li {
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.subrule-group {
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--field-light);
+}
+
+.subrule-group:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.rule-card .subrule-group {
+  padding: 0 22px;
+  margin: 0;
+  border-bottom: 1px dashed var(--field-light);
+}
+
+.rule-card .subrule-group:first-child {
+  padding-top: 20px;
+}
+
+.rule-card .subrule-group:last-child {
+  border-bottom: none;
+  padding-bottom: 20px;
+}
+
+.subrule-group h3 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold-bright);
+  margin: 0 0 12px 0;
+  font-family: 'Anton', sans-serif;
+}
+
+.playoff-intro {
+  padding: 20px 22px 16px;
+  margin: 0;
+  color: var(--chalk-dim);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.playoff-brackets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  padding: 24px 22px;
+  border-top: 1px dashed var(--field-light);
+}
+
+.bracket-stage {
+  background: rgba(226, 111, 15, 0.06);
+  border: 1px solid var(--field-light);
+  border-radius: 6px;
+  padding: 18px 16px;
+  text-align: center;
+}
+
+.bracket-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.bracket-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--chalk);
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+
+.bracket-stage .rule-list {
+  padding: 0;
+  margin: 0;
+}
+
+.bracket-stage .rule-list li {
+  padding: 6px 0;
+  font-size: 13px;
+  padding-left: 16px;
+}
+
+.rule-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.scoring-inline {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  padding: 20px 22px;
+  border-top: 1px dashed var(--field-light);
+}
+
+.scoring-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.scoring-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scoring-subsection h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold-bright);
+  margin: 0 0 8px 0;
+  font-family: 'Anton', sans-serif;
+}
+
+.scoring-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.stat-row {
+  border-bottom: 1px solid var(--field-light);
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.stat-row:hover {
+  background: rgba(226, 111, 15, 0.04);
+}
+
+.stat-name {
+  padding: 8px 0;
+  color: var(--chalk-dim);
+  font-size: 13px;
+  text-align: left;
+  width: 65%;
+}
+
+.stat-points {
+  padding: 8px 0 8px 12px;
+  text-align: right;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--gold-bright);
+}
+
+.stat-row.negative .stat-points {
+  color: #ef4444;
+}
+
+.stat-row.bonus {
+  background: rgba(226, 111, 15, 0.05);
+}
+
+.stat-row.bonus:hover {
+  background: rgba(226, 111, 15, 0.10);
+}
+
+.bonus-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--field-light);
+}
+
+.bonus-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold-bright);
+  margin-bottom: 8px;
+}
+
+@media (max-width: 1024px) {
+  .rules-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .scoring-inline {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 16px 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .rules-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rule-card-header {
+    padding: 18px 18px;
+  }
+
+  .rule-card-header h2 {
+    font-size: 19px;
+  }
+
+  .rule-card > .rule-list,
+  .playoff-brackets {
+    padding: 16px 18px;
+  }
+
+  .subrule-group {
+    padding: 0 18px;
+  }
+
+  .playoff-intro {
+    padding: 16px 18px 12px;
+  }
+
+  .playoff-brackets {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .section-intro {
+    padding: 20px 22px;
+  }
+
+  .scoring-inline {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px 18px;
+  }
+
+  .stat-name,
+  .stat-points {
+    padding: 6px 0;
+    font-size: 12px;
+  }
+
+  .scoring-subsection h3 {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .bonus-label {
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+}
