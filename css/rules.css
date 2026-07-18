@@ -10,6 +10,14 @@
   line-height: 1.7;
 }
 
+.rules-grid-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
 .rules-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -190,8 +198,14 @@
   padding-left: 16px;
 }
 
-.rule-card.full-width {
-  grid-column: 1 / -1;
+.scoring-section {
+  margin-bottom: 24px;
+}
+
+.scoring-section h2 {
+  font-size: 22px;
+  margin: 0 0 20px 0;
+  color: var(--chalk);
 }
 
 .scoring-inline {
@@ -289,6 +303,16 @@
   .rules-grid {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
+
+  .playoff-brackets {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .rules-grid-two-col {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -297,10 +321,23 @@
     gap: 20px;
     padding: 16px 18px;
   }
+
+  .rules-grid-two-col {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .playoff-brackets {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
   .rules-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rules-grid-two-col {
     grid-template-columns: 1fr;
   }
 
@@ -338,6 +375,11 @@
     grid-template-columns: 1fr;
     gap: 16px;
     padding: 16px 18px;
+  }
+
+  .scoring-section h2 {
+    font-size: 19px;
+    margin-bottom: 16px;
   }
 
   .stat-name,
