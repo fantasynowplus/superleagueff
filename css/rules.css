@@ -110,8 +110,10 @@
 }
 
 .subrule-group {
-  margin-bottom: 28px;
-  padding-bottom: 28px;
+  margin-top: 20px;
+  padding-top: 20px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
   border-bottom: 1px solid var(--field-light);
 }
 
