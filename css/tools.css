@@ -27,7 +27,7 @@
     font-size: 16px;
 }
 
-.btn-find { background: #FFA515; color: #000; }
+.btn-find { background: var(--gold); color: #000; }
 .btn-find:hover { background: #e89410; }
 
 .btn-dl { background: #002863; color: #fff; border: 1px solid #FFA515; }
