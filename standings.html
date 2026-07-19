@@ -6,6 +6,7 @@
 <title>Standings — Super League </title>
 <meta name="description" content="Current standings for Super League, a charity fantasy football league.">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/standings.css">
 </head>
 <body>
 
@@ -33,62 +34,49 @@
   </div>
 </section>
 
-<section>
-  <div class="wrap">
-    <div class="yardline"><span class="line"></span></div>
-    <div class="section-head">
-      <h2>Division A</h2>
-      <p>Week [00] standings.</p>
+<section class="standings-section">
+  <div class="standings-container">
+    <div class="standings-header">
+      <h2>League Standings</h2>
+      <p>Current Super League standings across all divisions, sorted by points for with wins as tiebreaker.</p>
     </div>
-    <table class="standings">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Team</th>
-          <th>Manager</th>
-          <th>W-L</th>
-          <th>PF</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="rank">1</td>
-          <td>[Team Name]</td>
-          <td>[Manager]</td>
-          <td>0-0</td>
-          <td>0000.0</td>
-        </tr>
-        <tr>
-          <td class="rank">2</td>
-          <td>[Team Name]</td>
-          <td>[Manager]</td>
-          <td>0-0</td>
-          <td>0000.0</td>
-        </tr>
-        <tr>
-          <td class="rank">3</td>
-          <td>[Team Name]</td>
-          <td>[Manager]</td>
-          <td>0-0</td>
-          <td>0000.0</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</section>
 
-<section class="alt">
-  <div class="wrap">
-    <div class="yardline"><span class="num">30</span><span class="line"></span></div>
-    <div class="callout">
-      <strong>Standings not live yet?</strong> They'll populate here once the season starts and divisions are finalized. If you're building this off a login system down the line, this table can pull straight from your database instead of being edited by hand.
+    <div class="standings-controls">
+      <select id="division-filter">
+        <option value="">All Divisions</option>
+      </select>
+    </div>
+
+    <div id="standings-loading" class="standings-loading">
+      Loading standings...
+    </div>
+
+    <div id="standings-error" class="standings-error" style="display: none;"></div>
+
+    <div class="standings-table-wrapper">
+      <table class="standings-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Team</th>
+            <th>Division</th>
+            <th>Points For</th>
+            <th>Record</th>
+          </tr>
+        </thead>
+        <tbody id="standings-table-body">
+          <tr>
+            <td colspan="5" class="standings-empty">Loading data...</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>&copy; 2026 Super League FF. A charity fantasy football league.</p>
+    <p>&copy; 2026 Super League. A charity fantasy football league.</p>
     <nav>
       <a href="rules-register.html">Rules</a>
       <a href="divisions.html">Divisions</a>
@@ -97,6 +85,7 @@
   </div>
 </footer>
 
-<script src="js/main.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/standings.js"></script>
 </body>
 </html>
