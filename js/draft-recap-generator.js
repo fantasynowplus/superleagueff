@@ -36,8 +36,7 @@ async function handleSleeper(username) {
 
     const picksRes = await fetch(`https://api.sleeper.app/v1/draft/${leagueData.draft_id}/picks`);
     const allPicks = await picksRes.json();
-    const myPicks = allPicks.filter(p => p.picked_by === user.user_id);
-
+    
     const myPicks = allPicks
         .filter(p => p.picked_by === user.user_id)
         .sort((a, b) => a.pick_no - b.pick_no);
@@ -60,23 +59,24 @@ function draw(picks, managerName, leagueName) {
     let imagesLoaded = 0;
     function imageLoadedCallback() {
         imagesLoaded++;
-        if (imagesLoaded === 2) {	
-  	  renderBoard(ctx, picks, managerName, leagueName, slffLogo, canvas.height);
-  	  imgTag.src = canvas.toDataURL("image/png");
-   	  imgTag.style.display = 'block';
-    	  document.getElementById('downloadBtn').style.display = 'block';
-	}
+        if (imagesLoaded === 1) {
+            renderBoard(ctx, picks, managerName, leagueName, slffLogo, canvas.height);
+            imgTag.src = canvas.toDataURL("image/png");
+            imgTag.style.display = 'block';
+            document.getElementById('downloadBtn').style.display = 'block';
+        }
     }
 
-	slffLogo.src = "assets/images/Super-League-Banner.png"
-	slffLogo.onload = imageLoadedCallback;
-	slffLogo.onerror = () => { sfbLogo.failed = true; imageLoadedCallback(); };
+    slffLogo.src = "assets/images/Super-League-Banner.png";
+    slffLogo.onload = imageLoadedCallback;
+    slffLogo.onerror = () => { slffLogo.failed = true; imageLoadedCallback(); };
+}
 
 function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight) {
     ctx.fillStyle = "#0f172a";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    const targetHeight = 70; 
+    const targetHeight = 70;
     const targetY = 15;
     let currentX = 25;
 
@@ -84,7 +84,7 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight) {
         const scale = targetHeight / slffLogo.height;
         const logoWidth = slffLogo.width * scale;
         ctx.drawImage(slffLogo, currentX, targetY, logoWidth, targetHeight);
-        currentX += logoWidth + 15; 
+        currentX += logoWidth + 15;
     }
 
     ctx.strokeStyle = "#334155";
@@ -93,7 +93,7 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight) {
     ctx.moveTo(currentX, 20);
     ctx.lineTo(currentX, 80);
     ctx.stroke();
-    currentX += 25; 
+    currentX += 25;
 
     ctx.textAlign = "left";
     ctx.fillStyle = "#ffffff";
@@ -111,25 +111,27 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight) {
 
     if (picks && Array.isArray(picks)) {
         const rowHeight = 64;
+        const picksPerColumn = 7;
         const posCounter = {};
         ctx.textAlign = "left";
 
         picks.forEach((p, i) => {
             if (!p || i >= 14) return;
-            const isRightCol = i >= 7;
+            
+            const isRightCol = i >= picksPerColumn;
             const colX = isRightCol ? 500 : 0;
-            const y = 165 + ((i % 10) * rowHeight);
+            const rowInColumn = i % picksPerColumn;
+            const y = 165 + (rowInColumn * rowHeight);
 
             const posRaw = (p.metadata?.position || "UNK").toUpperCase();
             posCounter[posRaw] = (posCounter[posRaw] || 0) + 1;
             const posDisplay = posRaw + posCounter[posRaw];
 
-	    const posRaw = p.metadata.position || "UNK";
             let color = "#475569";
-            if (posRaw.includes("QB")) color = "#f43f5e";       
-            else if (posRaw.includes("RB")) color = "#00ceb8";  
-            else if (posRaw.includes("WR")) color = "#93c5fd";  
-            else if (posRaw.includes("TE")) color = "#ffb26b";  
+            if (posRaw.includes("QB")) color = "#f43f5e";
+            else if (posRaw.includes("RB")) color = "#00ceb8";
+            else if (posRaw.includes("WR")) color = "#93c5fd";
+            else if (posRaw.includes("TE")) color = "#ffb26b";
 
             ctx.fillStyle = color;
             ctx.fillRect(colX, y, 500, rowHeight);
@@ -145,43 +147,47 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight) {
             ctx.fillText(playerName, colX + 130, textY);
         });
     }
-}
 
- drawFooter(ctx, canvasHeight);
+    drawFooter(ctx, canvasHeight);
 }
 
 function drawFooter(ctx, canvasHeight) {
     const footerHeightPx = 50;
     const footerStartY = canvasHeight - footerHeightPx;
     const footerTextY = footerStartY + 32;
-    
-    ctx.fillStyle = "#0a0f1a"; 
+
+    ctx.fillStyle = "#0a0f1a";
     ctx.fillRect(0, footerStartY, 1000, footerHeightPx);
-    
+
     const mainText = "SFB16 Roster powered by ";
     const brandText = "FantasyNow";
     const plusText = "+";
-    
+
     ctx.font = "bold 20px sans-serif";
     ctx.textAlign = "left";
-    
+
     const widthMain = ctx.measureText(mainText).width;
     const widthBrand = ctx.measureText(brandText).width;
     const widthPlus = ctx.measureText(plusText).width;
     const totalWidth = widthMain + widthBrand + widthPlus;
-    
+
     let currentX = (1000 - totalWidth) / 2;
-    
-    ctx.fillStyle = "#94a3b8"; 
+
+    ctx.fillStyle = "#94a3b8";
     ctx.fillText(mainText, currentX, footerTextY);
     currentX += widthMain;
-    
-    ctx.fillStyle = "#FFFFFF"; 
+
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillText(brandText, currentX, footerTextY);
     currentX += widthBrand;
-    
-    ctx.fillStyle = "#FFA515"; 
+
+    ctx.fillStyle = "#FFA515";
     ctx.fillText(plusText, currentX, footerTextY);
+}
+
+function getOrdinal(n) {
+    let s = ["th", "st", "nd", "rd"], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 function downloadImg() {
