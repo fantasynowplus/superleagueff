@@ -3,7 +3,7 @@ name: Update Standings Data
 on:
   schedule:
     - cron: '0 * * * *'  # Every hour
-  workflow_dispatch:
+  workflow_dispatch:     # Manual trigger
 
 jobs:
   update:
@@ -11,11 +11,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
-      - name: Fetch standings
+      - name: Fetch standings from Apps Script
         run: |
-          curl -s "AKfycbzo6MVGc5T331V63LLJ5g1HtyNTTFOPVrpNUWqKzEjCnAXLI_evNrbVij7ykLdl4k8Cfw" \
+          curl -s "https://script.google.com/macros/s/AKfycbzo6MVGc5T331V63LLJ5g1HtyNTTFOPVrpNUWqKzEjCnAXLI_evNrbVij7ykLdl4k8Cfw/exec" \
             -o data/standings.json
       
       - name: Commit if changed
