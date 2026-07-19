@@ -151,7 +151,7 @@ class StandingsManager {
 
 document.addEventListener('DOMContentLoaded', () => {
   const standings = new StandingsManager({
-    dataUrl: 'https://script.google.com/macros/s/AKfycbxkUB4Uc2lf02TympwKUXQ72vItMbJR9OkvY42fHf2oSeCVWddKf7OSl2bqC-wmvRmwVQ/exec',
+    dataUrl: 'https://script.google.com/macros/s/AKfycbzo6MVGc5T331V63LLJ5g1HtyNTTFOPVrpNUWqKzEjCnAXLI_evNrbVij7ykLdl4k8Cfw/exec',
     containerSelector: '#standings-table-body',
     loadingSelector: '#standings-loading',
     errorSelector: '#standings-error',
