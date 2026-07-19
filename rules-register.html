@@ -348,30 +348,22 @@
     <div class="yardline"><span class="line"></span></div>
     <div class="section-head">
       <h2>Register your team</h2>
-      <p>Fill this out to reserve your spot — you'll be placed into a division once payment is confirmed.</p>
+      <p>Fill this out to reserve your spot — if selected, you will be able to pick your division.</p>
     </div>
-
-    <div class="form-frame">
-      <label for="team-name">Team name</label>
-      <input type="text" id="team-name" name="team-name" placeholder="e.g. Gridiron Gremlins">
-
+    <form class="form-frame" action="https://formspree.io/f/mbdnoznz" method="POST">
       <label for="manager-name">Manager name</label>
-      <input type="text" id="manager-name" name="manager-name" placeholder="Your name">
-
+      <input type="text" id="manager-name" name="manager-name" placeholder="Your name" required>
       <label for="email">Email</label>
-      <input type="email" id="email" name="email" placeholder="you@email.com">
-
-      <label for="division-pref">Preferred division</label>
+      <input type="email" id="email" name="email" placeholder="you@email.com" required>
+      <label for="division-pref">Preferred platform</label>
       <select id="division-pref" name="division-pref">
-        <option value="">No preference</option>
-        <option value="a">Division A</option>
-        <option value="b">Division B</option>
-        <option value="c">Division C</option>
+        <option value="">Sleeper</option>
+        <option value="a">MyFantasyLeague</option>
       </select>
-
-      <a href="#" class="btn btn-primary" style="width: 100%; text-align: center;">Submit registration</a>
-    </div>
-
+      <label for="referral">Did someone refer you?</label>
+      <input type="referral" id="referral" name="referral" placeholder="Justin Bauerle" required>
+      <button type="submit" class="btn btn-primary" style="width: 100%; text-align: center; border: none; cursor: pointer;">Submit registration</button>
+    </form>
     <p style="color: var(--ash); font-size: 13px; margin-top: 16px;">
       Team accounts and profile management are launching soon. For now, registrations are collected here and confirmed by email.
     </p>
