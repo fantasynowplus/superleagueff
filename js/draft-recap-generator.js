@@ -1,7 +1,7 @@
 const MFL_YEAR = '2026';
 
 async function generateGraphic() {
-    const username = document.getElementById('username').value;
+    const username = document.getElementById('username').value.trim();
     const loader = document.getElementById('loader');
 
     if (!username) return alert("Enter your Sleeper username");
@@ -13,7 +13,7 @@ async function generateGraphic() {
         await handleSleeper(username);
     } catch (e) {
         console.error("Detailed Error:", e);
-        alert("Error fetching data: " + e.message); 
+        alert("Error fetching data: " + e.message);
     } finally {
         loader.style.display = 'none';
     }
@@ -21,29 +21,33 @@ async function generateGraphic() {
 
 async function handleSleeper(username) {
     const userRes = await fetch(`https://api.sleeper.app/v1/user/${username}`);
+    if (!userRes.ok) throw new Error('User not found');
     const user = await userRes.json();
-    
-    const leaguesRes = await fetch(`https://api.sleeper.app/v1/user/${user.user_id}/leagues/nfl/2026`);
+
+    const leaguesRes = await fetch(`https://api.sleeper.app/v1/user/${user.user_id}/leagues/nfl/${MFL_YEAR}`);
+    if (!leaguesRes.ok) throw new Error('Could not fetch leagues');
     const leagues = await leaguesRes.json();
-    
-    const sfbLeague = leagues.find(l => l.name && l.name.startsWith("#SFB16"));
-    if (!sfbLeague) return alert("No #SFB16 league found for this user.");
-    
-    const leagueRes = await fetch(`https://api.sleeper.app/v1/league/${sfbLeague.league_id}`);
+
+    const slffLeague = leagues.find(l => l.name && l.name.startsWith("#SLFF4"));
+    if (!slffLeague) return alert("No #SLFF4 league found for this user.");
+
+    const leagueRes = await fetch(`https://api.sleeper.app/v1/league/${slffLeague.league_id}`);
+    if (!leagueRes.ok) throw new Error('Could not fetch league');
     const leagueData = await leagueRes.json();
-    
+
     if (!leagueData.draft_id) return alert("No draft found for this league");
-    
+
     const picksRes = await fetch(`https://api.sleeper.app/v1/draft/${leagueData.draft_id}/picks`);
+    if (!picksRes.ok) throw new Error('Could not fetch picks');
     const allPicks = await picksRes.json();
-    
+
     const myPicks = allPicks
         .filter(p => p.picked_by === user.user_id)
         .sort((a, b) => a.pick_no - b.pick_no);
-    
+
     if (myPicks.length === 0) return alert("No picks found for this user");
-    
-    draw(myPicks, user.display_name, sfbLeague.name, allPicks);
+
+    draw(myPicks, user.display_name, slffLeague.name, allPicks);
 }
 
 function draw(picks, managerName, leagueName, allPicks) {
@@ -52,29 +56,24 @@ function draw(picks, managerName, leagueName, allPicks) {
     const imgTag = document.getElementById('finalImage');
 
     canvas.width = 1000;
-    canvas.height = 650; 
+    canvas.height = 650;
 
-    const sfbLogo = new Image();
-    const secondLogo = new Image();
-    
+    const slffLogo = new Image();
+
     let imagesLoaded = 0;
     function imageLoadedCallback() {
         imagesLoaded++;
-        if (imagesLoaded === 2) {
-            renderBoard(ctx, picks, managerName, leagueName, sfbLogo, secondLogo, canvas.height, allPicks);
+        if (imagesLoaded === 1) {
+            renderBoard(ctx, picks, managerName, leagueName, slffLogo, canvas.height, allPicks);
             imgTag.src = canvas.toDataURL("image/png");
             imgTag.style.display = 'block';
             document.getElementById('downloadBtn').style.display = 'block';
         }
     }
 
-    sfbLogo.src = "assets/images/SFB.png";
-    sfbLogo.onload = imageLoadedCallback;
-    sfbLogo.onerror = () => { sfbLogo.failed = true; imageLoadedCallback(); };
-
-    secondLogo.src = "assets/images/fantasycares.png";
-    secondLogo.onload = imageLoadedCallback;
-    secondLogo.onerror = () => { secondLogo.failed = true; imageLoadedCallback(); };
+    slffLogo.src = "assets/images/Super-League-Banner.png";
+    slffLogo.onload = imageLoadedCallback;
+    slffLogo.onerror = () => { slffLogo.failed = true; imageLoadedCallback(); };
 }
 
 function getSnakeDraftPosition(pickNo) {
@@ -102,82 +101,71 @@ function getPositionDraftNumber(allPicks, playerPickNo) {
     return count + 1;
 }
 
-function renderBoard(ctx, picks, manager, league, sfbLogo, secondLogo, canvasHeight, allPicks) {
-    ctx.fillStyle = "#0f172a"; 
+function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight, allPicks) {
+    ctx.fillStyle = "#0f172a";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-    const targetHeight = 70; 
-    const targetY = 15;
-    
-    let logos = [];
-    if (sfbLogo && !sfbLogo.failed) {
-        logos.push({ img: sfbLogo, width: sfbLogo.width, height: sfbLogo.height });
-    }
-    if (secondLogo && !secondLogo.failed) {
-        logos.push({ img: secondLogo, width: secondLogo.width, height: secondLogo.height });
-    }
-    
-    const totalLogoWidth = logos.reduce((sum, logo) => {
-        const scale = targetHeight / logo.height;
-        return sum + (logo.width * scale) + 15;
-    }, 0) - 15;
-    
-    let currentX = (1000 - totalLogoWidth) / 2;
-    
-    for (let logo of logos) {
-        const scale = targetHeight / logo.height;
-        const logoWidth = logo.width * scale;
-        ctx.drawImage(logo.img, currentX, targetY, logoWidth, targetHeight);
-        currentX += logoWidth + 15;
-    }
 
     ctx.strokeStyle = "#334155";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(25, 100);
-    ctx.lineTo(975, 100);
+    ctx.moveTo(0, 95);
+    ctx.lineTo(1000, 95);
     ctx.stroke();
 
-    ctx.textAlign = "left";
+    const targetHeight = 70;
+    const targetY = 15;
+    let currentX = 25;
+
+    if (slffLogo && !slffLogo.failed) {
+        const scale = targetHeight / slffLogo.height;
+        const logoWidth = slffLogo.width * scale;
+        ctx.drawImage(slffLogo, currentX, targetY, logoWidth, targetHeight);
+        currentX += logoWidth + 15;
+    }
+
+    ctx.textAlign = "right";
     ctx.fillStyle = "#ffffff";
-    ctx.font = "normal 34px sans-serif";
-    ctx.fillText(manager, 25, 145); 
-    ctx.font = "normal 16px sans-serif";
-    ctx.fillText(league, 25, 171);
+    ctx.font = "bold 48px sans-serif";
+    ctx.fillText(manager, 975, 65);
+    ctx.font = "bold 20px sans-serif";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText(league, 975, 90);
 
     if (picks && Array.isArray(picks)) {
         const rowHeight = 50;
         const picksPerColumn = 7;
-        
+        ctx.textAlign = "left";
+
         picks.slice(0, 14).forEach((p, i) => {
             if (!p) return;
-            
+
             const isRightCol = i >= picksPerColumn;
             const colX = isRightCol ? 500 : 0;
             const rowInColumn = i % picksPerColumn;
-            const y = 190 + (rowInColumn * rowHeight);
-            
-            const posRaw = p.metadata.position || "UNK";
+            const y = 120 + (rowInColumn * rowHeight);
+
+            const posRaw = (p.metadata?.position || "UNK").toUpperCase();
             const posDraftNum = getPositionDraftNumber(allPicks, p.pick_no);
             const snakeDraftPos = getSnakeDraftPosition(p.pick_no);
-            
+
             let color = "#475569";
-            if (posRaw.includes("QB")) color = "#FCDAD7";       
-            else if (posRaw.includes("RB")) color = "#D2F4E2";  
-            else if (posRaw.includes("WR")) color = "#D2DCFF";  
-            else if (posRaw.includes("TE")) color = "#FFF3CD";  
-            else if (posRaw.includes("K") || posRaw.includes("DEF")) color = "#E9D5FF";
+            if (posRaw.includes("QB")) color = "#f43f5e";
+            else if (posRaw.includes("RB")) color = "#00ceb8";
+            else if (posRaw.includes("WR")) color = "#93c5fd";
+            else if (posRaw.includes("TE")) color = "#ffb26b";
+            else if (posRaw.includes("K") || posRaw.includes("DEF")) color = "#c084fc";
 
             ctx.fillStyle = color;
             ctx.fillRect(colX, y, 500, rowHeight);
+
             ctx.fillStyle = "#0f172a";
-            ctx.textAlign = "left";
-            ctx.font = "normal 14px sans-serif";
+            ctx.font = "12px sans-serif";
             ctx.fillText(snakeDraftPos, colX + 15, y + 33);
-            ctx.font = "bold 15px sans-serif";
+            ctx.font = "bold 16px sans-serif";
             ctx.fillText(posRaw + posDraftNum, colX + 65, y + 33);
-            ctx.font = "normal 22px sans-serif"; 
-            ctx.fillText(p.metadata.first_name + " " + p.metadata.last_name, colX + 135, y + 33);
+            ctx.font = "bold 22px sans-serif";
+            const playerName = `${p.metadata?.first_name || "Unknown"} ${p.metadata?.last_name || ""}`.trim();
+            ctx.fillText(playerName, colX + 135, y + 33);
         });
     }
 
@@ -188,33 +176,33 @@ function drawFooter(ctx, canvasHeight) {
     const footerHeightPx = 50;
     const footerStartY = canvasHeight - footerHeightPx;
     const footerTextY = footerStartY + 32;
-    
-    ctx.fillStyle = "#0a0f1a"; 
+
+    ctx.fillStyle = "#0a0f1a";
     ctx.fillRect(0, footerStartY, 1000, footerHeightPx);
-    
+
     const mainText = "SFB16 Roster powered by ";
     const brandText = "FantasyNow";
     const plusText = "+";
-    
+
     ctx.font = "bold 20px sans-serif";
     ctx.textAlign = "left";
-    
+
     const widthMain = ctx.measureText(mainText).width;
     const widthBrand = ctx.measureText(brandText).width;
     const widthPlus = ctx.measureText(plusText).width;
     const totalWidth = widthMain + widthBrand + widthPlus;
-    
+
     let currentX = (1000 - totalWidth) / 2;
-    
-    ctx.fillStyle = "#94a3b8"; 
+
+    ctx.fillStyle = "#94a3b8";
     ctx.fillText(mainText, currentX, footerTextY);
     currentX += widthMain;
-    
-    ctx.fillStyle = "#FFFFFF"; 
+
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillText(brandText, currentX, footerTextY);
     currentX += widthBrand;
-    
-    ctx.fillStyle = "#FFA515"; 
+
+    ctx.fillStyle = "#FFA515";
     ctx.fillText(plusText, currentX, footerTextY);
 }
 
