@@ -25,6 +25,10 @@ body {
   line-height: 1.6;
 }
 
+hidden-nav {
+  display: none;
+}  
+
 h1, h2, h3, .display {
   font-family: 'Anton', sans-serif;
   font-weight: 400;
