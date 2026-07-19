@@ -2,8 +2,8 @@ name: Update Standings Data
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Every hour
-  workflow_dispatch:     
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
   update:
@@ -15,7 +15,7 @@ jobs:
       
       - name: Fetch standings from Apps Script
         run: |
-          curl -s "https://script.google.com/macros/s/AKfycbzo6MVGc5T331V63LLJ5g1HtyNTTFOPVrpNUWqKzEjCnAXLI_evNrbVij7ykLdl4k8Cfw/exec" \
+          curl -L -s "https://script.google.com/macros/s/AKfycbzo6MVGc5T331V63LLJ5g1HtyNTTFOPVrpNUWqKzEjCnAXLI_evNrbVij7ykLdl4k8Cfw/exec" \
             -o data/standings.json
       
       - name: Commit if changed
