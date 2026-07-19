@@ -15,7 +15,7 @@ jobs:
       
       - name: Fetch standings
         run: |
-          curl -s "https://script.google.com/macros/s/AKfycbxusGQpD7XHV7wbI2RjtbnZLsp9SgSOXIxFAx8z3jRroOUFQpqqH2H4v61un1HutWM_kg/exec" \
+          curl -s "AKfycbzo6MVGc5T331V63LLJ5g1HtyNTTFOPVrpNUWqKzEjCnAXLI_evNrbVij7ykLdl4k8Cfw" \
             -o data/standings.json
       
       - name: Commit if changed
