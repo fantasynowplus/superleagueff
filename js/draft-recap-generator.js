@@ -95,12 +95,6 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight) {
     ctx.stroke();
     currentX += 25;
 
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 56px sans-serif";
-    ctx.fillText("DRAFT", 25, 65);
-    ctx.fillText("RECAP", 25, 115);
-
     ctx.textAlign = "right";
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 48px sans-serif";
