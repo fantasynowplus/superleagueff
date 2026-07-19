@@ -56,7 +56,7 @@ function draw(picks, managerName, leagueName, allPicks) {
     const imgTag = document.getElementById('finalImage');
 
     canvas.width = 1000;
-    canvas.height = 650;
+    canvas.height = 550;
 
     const slffLogo = new Image();
 
@@ -78,11 +78,17 @@ function draw(picks, managerName, leagueName, allPicks) {
 
 function getSnakeDraftPosition(pickNo) {
     const LEAGUE_SIZE = 12;
-    const roundNum = Math.floor((pickNo - 1) / LEAGUE_SIZE) + 1;
-    const posInRound = (pickNo - 1) % LEAGUE_SIZE + 1;
+    const team = (pickNo - 1) % LEAGUE_SIZE + 1;
+    const round = Math.floor((pickNo - 1) / LEAGUE_SIZE) + 1;
     
-    const slot = roundNum % 2 === 1 ? posInRound : LEAGUE_SIZE - posInRound + 1;
-    return `${roundNum}.${String(slot).padStart(2, '0')}`;
+    let slot;
+    if (round % 2 === 1) {
+        slot = team;
+    } else {
+        slot = LEAGUE_SIZE + 1 - team;
+    }
+    
+    return `${round}.${String(slot).padStart(2, '0')}`;
 }
 
 function getPositionDraftNumber(allPicks, playerPickNo) {
@@ -108,8 +114,8 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight, allPic
     ctx.strokeStyle = "#334155";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(0, 95);
-    ctx.lineTo(1000, 95);
+    ctx.moveTo(0, 120);
+    ctx.lineTo(1000, 120);
     ctx.stroke();
 
     const targetHeight = 70;
@@ -132,7 +138,7 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight, allPic
     ctx.fillText(league, 975, 90);
 
     if (picks && Array.isArray(picks)) {
-        const rowHeight = 50;
+        const rowHeight = 48;
         const picksPerColumn = 7;
         ctx.textAlign = "left";
 
@@ -142,7 +148,7 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight, allPic
             const isRightCol = i >= picksPerColumn;
             const colX = isRightCol ? 500 : 0;
             const rowInColumn = i % picksPerColumn;
-            const y = 120 + (rowInColumn * rowHeight);
+            const y = 135 + (rowInColumn * rowHeight);
 
             const posRaw = (p.metadata?.position || "UNK").toUpperCase();
             const posDraftNum = getPositionDraftNumber(allPicks, p.pick_no);
@@ -160,12 +166,12 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight, allPic
 
             ctx.fillStyle = "#0f172a";
             ctx.font = "12px sans-serif";
-            ctx.fillText(snakeDraftPos, colX + 15, y + 33);
+            ctx.fillText(snakeDraftPos, colX + 15, y + 30);
             ctx.font = "bold 16px sans-serif";
-            ctx.fillText(posRaw + posDraftNum, colX + 65, y + 33);
+            ctx.fillText(posRaw + posDraftNum, colX + 65, y + 30);
             ctx.font = "bold 22px sans-serif";
             const playerName = `${p.metadata?.first_name || "Unknown"} ${p.metadata?.last_name || ""}`.trim();
-            ctx.fillText(playerName, colX + 135, y + 33);
+            ctx.fillText(playerName, colX + 135, y + 30);
         });
     }
 
