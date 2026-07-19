@@ -3,7 +3,7 @@ name: Update Standings Data
 on:
   schedule:
     - cron: '0 * * * *'  # Every hour
-  workflow_dispatch:     # Manual trigger
+  workflow_dispatch:     
 
 jobs:
   update:
