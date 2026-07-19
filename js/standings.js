@@ -151,14 +151,13 @@ class StandingsManager {
 
 document.addEventListener('DOMContentLoaded', () => {
   const standings = new StandingsManager({
-    dataUrl: 'data/standings.json',
+    dataUrl: 'https://script.google.com/macros/s/AKfycbxusGQpD7XHV7wbI2RjtbnZLsp9SgSOXIxFAx8z3jRroOUFQpqqH2H4v61un1HutWM_kg/exec',
     containerSelector: '#standings-table-body',
     loadingSelector: '#standings-loading',
     errorSelector: '#standings-error',
     divisionFilterSelector: '#division-filter'
   });
-  
+
   standings.init();
-  
   window.standingsManager = standings;
 });
