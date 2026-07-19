@@ -10,6 +10,12 @@
   line-height: 1.7;
 }
 
+.section-padding {
+    padding: 60px 20px;
+    max-width: 1000px;
+    margin: auto;
+}
+
 .rules-grid-two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
