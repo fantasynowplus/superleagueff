@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Standings — Super League </title>
+<meta name="description" content="Current standings for Super League, a charity fantasy football league.">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/standings.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <img src="assets/images/Super-League-Banner.png" alt="Super League" class="site-logo">
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="rules-register.html">Rules &amp; Registration</a>
+      <a href="divisions.html" class="hidden-nav"">Divisions</a>
+      <a href="standings.html" class="active">Standings</a>
+      <a href="https://www.extra-life.org/teams/slff" class="donate-link" target="_blank" rel="noopener">Donate</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" style="padding-bottom: 40px;">
+  <div class="wrap">
+    <div class="eyebrow">Live Standings</div>
+    <h1>The <em>scoreboard</em> doesn't lie.</h1>
+    <p class="lede">Standings update weekly once the season kicks off. Check back every Tuesday after Monday Night Football.</p>
+  </div>
+</section>
+
+<main class="page-container" style="padding: 40px 20px; max-width: 800px; margin: 40px auto; text-align: center;">
+    {% include tools-subnav.html %}
+    <h1 style="text-align: center; color: white;">Draft Recap</h1>
+    
+    <div class="form-content" style="padding: 20px;">
+
+    <p style="color: #cbd5e1; font-size: 14px; margin-bottom: 20px;">
+        <strong>Note:</strong> Enter your Sleeper username to view your #SLFF4 drafted team.
+    </p>
+
+    <div class="input-group sfb-input-group" style="display: flex; justify-content: center; align-items: center; max-width: 410px; margin: 0 auto; gap: 10px;">
+        <input type="text" id="username" class="tool-input" placeholder="Sleeper Username">
+    </div>
+
+        <button class="tool-btn btn-find" style="margin: 15px auto; display: block; max-width: 410px;" onclick="generateGraphic()">
+            GENERATE #SLFF4 GRAPHIC
+        </button>
+
+    <div id="loader" class="loader">SYNCING DRAFT DATA...</div>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <div id="resultContainer" style="margin-top: 30px;">
+        <img id="finalImage" style="max-width: 100%; display: none; border-radius: 8px; border: 1px solid #334155;" alt="Draft Recap Output">
+    </div>
+    
+    <button id="downloadBtn" class="tool-btn btn-dl" style="display:none; margin: 20px auto; max-width: 410px;" onclick="downloadImg()">
+        DOWNLOAD DRAFT IMAGE
+    </button>
+    </div> 
+</main>
+
+<script src="javascript/draft-recap-generator.js"></script>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>&copy; 2026 Super League. A charity fantasy football league.</p>
+    <nav>
+      <a href="rules-register.html">Rules</a>
+      <a href="divisions.html">Divisions</a>
+      <a href="draft-tool.html">Draft Tool</a>
+      <a href="standings.html">Standings</a>
+    </nav>
+  </div>
+</footer>
+
+  <script src="js/main.js"></script>
+
+</body>
+</html>
