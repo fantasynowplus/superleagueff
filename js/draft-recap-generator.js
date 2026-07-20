@@ -78,15 +78,8 @@ function draw(picks, managerName, leagueName, allPicks) {
 
 function getSnakeDraftPosition(pickNo) {
     const LEAGUE_SIZE = 12;
-    const team = (pickNo - 1) % LEAGUE_SIZE + 1;
     const round = Math.floor((pickNo - 1) / LEAGUE_SIZE) + 1;
-    
-    let slot;
-    if (round % 2 === 1) {
-        slot = team;
-    } else {
-        slot = LEAGUE_SIZE + 1 - team;
-    }
+    const slot = (pickNo - 1) % LEAGUE_SIZE + 1;
     
     return `${round}.${String(slot).padStart(2, '0')}`;
 }
