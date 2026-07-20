@@ -4,13 +4,19 @@
     max-width: 400px;
     padding: 15px;
     margin: 10px 0;
-    border-radius: 5px;
+    border-radius: 0;
     border: 1px solid #333;
     background: #1a2a40;
     color: #ffffff;
     font-size: 16px;
     text-align: center;
-    box-sizing: border-box; /* Ensures padding doesn't break width */
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+}
+
+.tool-input:focus, .tool-select:focus {
+    outline: none;
+    border-color: #FFA515;
 }
 
 /* Primary Buttons */
@@ -19,12 +25,15 @@
     max-width: 400px;
     padding: 15px;
     margin: 10px 0;
-    border-radius: 5px;
+    border-radius: 0;
     border: none;
-    font-weight: bold;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     cursor: pointer;
     transition: 0.3s;
     font-size: 16px;
+    clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
 }
 
 .btn-find { background: var(--gold); color: #000; }
@@ -39,6 +48,7 @@
     display: none; 
     margin: 15px; 
     font-weight: bold; 
+    text-transform: uppercase;
 }
 
 .input-group {
@@ -52,30 +62,31 @@
 }
 
 .tool-select {
-    margin-top: 0; /* Ensures no extra gap above the dropdown */
+    margin-top: 0;
     width: 100%;
-    max-width: 600px; /* Aligned with input-group max-width */
+    max-width: 600px;
 }
 
 .tool-input { 
     margin: 0; 
-    flex: 1; /* Allows the input to grow and take up remaining space */
+    flex: 1;
 }
 
 .tool-btn { 
     margin: 0; 
-    width: auto; /* Shrinks the button to fit its text */
-    flex: 0 0 auto; /* Prevents the button from stretching */
-    white-space: nowrap; /* Keeps the button text on one line */
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
+
 /* SFB Tool */
 .sfb-input-group .tool-select, 
 .sfb-input-group .tool-input {
     flex: 1;           
-    height: 50px;      /* Force them to be the exact same height */
-    padding: 0 15px;   /* Consistent internal padding */
+    height: 50px;
+    padding: 0 15px;
     margin: 0;
-    box-sizing: border-box; /* Ensures padding doesn't add to the height */
+    box-sizing: border-box;
     vertical-align: middle;
 }
 
