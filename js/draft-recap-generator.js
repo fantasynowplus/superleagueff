@@ -1,16 +1,75 @@
 const MFL_YEAR = '2026';
+const SLFF_MFL_LEAGUE_ID = '57322';
+const CLOUDFLARE_WORKER_URL = 'https://sfb.fantasynowplus.workers.dev';
+
+function getMFLProxyUrl(type, leagueId) {
+    return `${CLOUDFLARE_WORKER_URL}?TYPE=${type}&LEAGUE_ID=${leagueId}`;
+}
+
+function handlePlatformChange() {
+    const platform = document.getElementById('platform').value;
+    const sleeperInputs = document.getElementById('sleeperInputs');
+    const mflInputs = document.getElementById('mflInputs');
+
+    if (platform === 'sleeper') {
+        sleeperInputs.style.display = 'block';
+        mflInputs.style.display = 'none';
+    } else {
+        sleeperInputs.style.display = 'none';
+        mflInputs.style.display = 'block';
+        handleMFLLeagueLoad();
+    }
+}
+
+async function handleMFLLeagueLoad() {
+    const franchiseSelect = document.getElementById('mflFranchise');
+    franchiseSelect.innerHTML = '<option value="">Loading franchises...</option>';
+
+    try {
+        const res = await fetch(getMFLProxyUrl('league', SLFF_MFL_LEAGUE_ID));
+        const data = await res.json();
+        
+        if (!data.league || !data.league.franchises || !data.league.franchises.franchise) {
+            alert("Could not load franchises for this league");
+            franchiseSelect.innerHTML = '<option value="">Select a franchise</option>';
+            return;
+        }
+
+        const franchises = Array.isArray(data.league.franchises.franchise) 
+            ? data.league.franchises.franchise 
+            : [data.league.franchises.franchise];
+
+        franchiseSelect.innerHTML = '<option value="">Select a franchise</option>';
+        franchises.forEach(f => {
+            const option = document.createElement('option');
+            option.value = f.id;
+            option.textContent = `${f.name} (${f.id})`;
+            franchiseSelect.appendChild(option);
+        });
+    } catch (e) {
+        console.error("Error loading franchises:", e);
+        alert("Error loading franchises: " + e.message);
+        franchiseSelect.innerHTML = '<option value="">Select a franchise</option>';
+    }
+}
 
 async function generateGraphic() {
-    const username = document.getElementById('username').value.trim();
+    const platform = document.getElementById('platform').value;
     const loader = document.getElementById('loader');
-
-    if (!username) return alert("Enter your Sleeper username");
 
     loader.style.display = 'block';
     loader.innerText = "Syncing draft data...";
 
     try {
-        await handleSleeper(username);
+        if (platform === 'sleeper') {
+            const username = document.getElementById('username').value.trim();
+            if (!username) return alert("Enter your Sleeper username");
+            await handleSleeper(username);
+        } else {
+            const franchiseId = document.getElementById('mflFranchise').value;
+            if (!franchiseId) return alert("Select your franchise");
+            await handleMFL(SLFF_MFL_LEAGUE_ID, franchiseId);
+        }
     } catch (e) {
         console.error("Detailed Error:", e);
         alert("Error fetching data: " + e.message);
@@ -50,6 +109,124 @@ async function handleSleeper(username) {
     draw(myPicks, user.display_name, slffLeague.name, allPicks);
 }
 
+async function handleMFL(leagueId, franchiseId) {
+    const leagueRes = await fetch(getMFLProxyUrl('league', leagueId));
+    const leagueData = await leagueRes.json();
+    
+    const draftRes = await fetch(getMFLProxyUrl('draftResults', leagueId));
+    const draftData = await draftRes.json();
+    
+    const playersRes = await fetch(getMFLProxyUrl('players', leagueId));
+    const playersData = await playersRes.json();
+    
+    if (!leagueData.league || !leagueData.league.franchises || !leagueData.league.franchises.franchise) return alert("Could not load league data");
+    if (!draftData.draftResults) return alert("No draft results found");
+    if (!playersData.players || !playersData.players.player) return alert("Could not load player data");
+    
+    const franchises = Array.isArray(leagueData.league.franchises.franchise) 
+        ? leagueData.league.franchises.franchise 
+        : [leagueData.league.franchises.franchise];
+    
+    const managerFranchise = franchises.find(f => f.id === franchiseId);
+    if (!managerFranchise) return alert("Franchise not found");
+    
+    const managerName = managerFranchise.name;
+    const leagueName = leagueData.league.name;
+    
+    const draftPicksRaw = draftData.draftResults.draftPick || draftData.draftResults.draftUnit.draftPick;
+    if (!draftPicksRaw) return alert("No draft data found");
+    
+    const draftPicks = Array.isArray(draftPicksRaw) ? draftPicksRaw : [draftPicksRaw];
+    
+    const players = Array.isArray(playersData.players.player)
+        ? playersData.players.player
+        : [playersData.players.player];
+    
+    const playerMap = {};
+    players.forEach(p => {
+        playerMap[p.id] = p;
+    });
+    
+    const myPicks = draftPicks
+        .filter(p => p.franchise === franchiseId)
+        .map(p => {
+            const round = parseInt(p.round);
+            const pick = parseInt(p.pick);
+            const LEAGUE_SIZE = 12;
+            const pickOverallNumber = (round - 1) * LEAGUE_SIZE + pick;
+            
+            return {
+                ...p,
+                pickOverallNumber: pickOverallNumber
+            };
+        })
+        .sort((a, b) => a.pickOverallNumber - b.pickOverallNumber)
+        .map((p) => {
+            const player = playerMap[p.player];
+            
+            let firstName = "Unknown";
+            let lastName = "";
+            if (player?.name) {
+                if (player.name.includes(",")) {
+                    const parts = player.name.split(",").map(s => s.trim());
+                    lastName = parts[0];
+                    firstName = parts[1] || "Unknown";
+                } else {
+                    const parts = player.name.split(/\s+/);
+                    firstName = parts[0];
+                    lastName = parts.slice(1).join(" ");
+                }
+            }
+            
+            return {
+                pick_no: p.pickOverallNumber,
+                metadata: {
+                    position: player?.position || "UNK",
+                    team: player?.team || "",
+                    first_name: firstName,
+                    last_name: lastName
+                }
+            };
+        });
+    
+    if (myPicks.length === 0) return alert("No picks found for this franchise");
+    
+    const allPicksWithMetadata = draftPicks
+        .map(p => {
+            const round = parseInt(p.round);
+            const pick = parseInt(p.pick);
+            const LEAGUE_SIZE = 12;
+            const pickOverallNumber = (round - 1) * LEAGUE_SIZE + pick;
+            const player = playerMap[p.player];
+            
+            let firstName = "Unknown";
+            let lastName = "";
+            if (player?.name) {
+                if (player.name.includes(",")) {
+                    const parts = player.name.split(",").map(s => s.trim());
+                    lastName = parts[0];
+                    firstName = parts[1] || "Unknown";
+                } else {
+                    const parts = player.name.split(/\s+/);
+                    firstName = parts[0];
+                    lastName = parts.slice(1).join(" ");
+                }
+            }
+            
+            return {
+                pick_no: pickOverallNumber,
+                metadata: {
+                    position: player?.position || "UNK",
+                    team: player?.team || "",
+                    first_name: firstName,
+                    last_name: lastName
+                }
+            };
+        });
+    
+    draw(myPicks, managerName, leagueName, allPicksWithMetadata);
+}
+
 function draw(picks, managerName, leagueName, allPicks) {
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -85,14 +262,15 @@ function getSnakeDraftPosition(pickNo) {
 }
 
 function getPositionDraftNumber(allPicks, playerPickNo) {
-    const targetPick = allPicks.find(p => p.pick_no === playerPickNo);
+    const targetPick = allPicks.find(p => (p.pick_no || p.pickOverallNumber) === playerPickNo);
     if (!targetPick || !targetPick.metadata) return 1;
     
     const position = targetPick.metadata.position;
     let count = 0;
     
     for (let pick of allPicks) {
-        if (pick.pick_no < playerPickNo && pick.metadata && pick.metadata.position === position) {
+        const pickNum = pick.pick_no || pick.pickOverallNumber;
+        if (pickNum < playerPickNo && pick.metadata && pick.metadata.position === position) {
             count++;
         }
     }
