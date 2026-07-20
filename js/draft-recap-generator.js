@@ -141,7 +141,7 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight, allPic
             const isRightCol = i >= picksPerColumn;
             const colX = isRightCol ? 500 : 0;
             const rowInColumn = i % picksPerColumn;
-            const y = 135 + (rowInColumn * rowHeight);
+            const y = 120 + (rowInColumn * rowHeight);
 
             const posRaw = (p.metadata?.position || "UNK").toUpperCase();
             const posDraftNum = getPositionDraftNumber(allPicks, p.pick_no);
