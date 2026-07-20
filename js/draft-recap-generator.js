@@ -112,7 +112,7 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight, allPic
     ctx.stroke();
 
     const targetHeight = 70;
-    const targetY = 15;
+    const targetY = 20;
     let currentX = 25;
 
     if (slffLogo && !slffLogo.failed) {
