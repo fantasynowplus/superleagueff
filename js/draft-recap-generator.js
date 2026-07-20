@@ -131,7 +131,7 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight, allPic
     ctx.fillText(league, 975, 90);
 
     if (picks && Array.isArray(picks)) {
-        const rowHeight = 52;
+        const rowHeight = 55;
         const picksPerColumn = 7;
         ctx.textAlign = "left";
 
@@ -159,14 +159,14 @@ function renderBoard(ctx, picks, manager, league, slffLogo, canvasHeight, allPic
             ctx.fillRect(colX, y, 500, rowHeight);
 
             ctx.fillStyle = "#0f172a";
-            ctx.font = "12px sans-serif";
+            ctx.font = "14px sans-serif";
             ctx.fillText(snakeDraftPos, colX + 15, y + 32);
             ctx.font = "bold 16px sans-serif";
             ctx.fillText(posRaw + posDraftNum, colX + 65, y + 32);
             ctx.font = "bold 22px sans-serif";
             const playerName = `${p.metadata?.first_name || "Unknown"} ${p.metadata?.last_name || ""}`.trim();
             ctx.fillText(playerName, colX + 135, y + 32);
-            ctx.font = "12px sans-serif";
+            ctx.font = "bold 14px sans-serif";
             ctx.fillText(teamAbbr, colX + 455, y + 32);
         });
     }
@@ -182,7 +182,7 @@ function drawFooter(ctx, canvasHeight) {
     ctx.fillStyle = "#0a0f1a";
     ctx.fillRect(0, footerStartY, 1000, footerHeightPx);
 
-    const mainText = "SFB16 Roster powered by ";
+    const mainText = "#SLFF4 Roster powered by ";
     const brandText = "FantasyNow";
     const plusText = "+";
 
