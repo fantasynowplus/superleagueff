@@ -41,7 +41,7 @@ function setupUI(level) {
   document.getElementById('adminLevel').textContent = levelNames[level] || `Level ${level}`;
   document.getElementById('levelBadge').textContent = levelNames[level] || `Level ${level}`;
   document.getElementById('yourLevel').textContent = levelNames[level] || `Level ${level}`;
-  document.getElementById('accessLevels').textContent = 'Allowed levels: 1, 2, 3, 4';
+  document.getElementById('accessLevels').textContent = 'Allowed levels: 1, 4, 7, 9';
 }
 
 function setupEventListeners() {
