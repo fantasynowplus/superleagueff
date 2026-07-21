@@ -58,9 +58,16 @@ function setupEventListeners() {
   });
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
-    await auth.logout();
-    window.location.href = './login.html';
-  });
+      await auth.logout();
+      window.location.href = './admin.html';
+    });
+  
+    document.getElementById('headerLogout').addEventListener('click', async () => {
+      await auth.logout();
+      window.location.href = './admin.html';
+    });
+  
+    document.getElementById('headerUserName').textContent = currentProfile.name || 'Admin';
 }
 
 async function loadDashboard(level) {
