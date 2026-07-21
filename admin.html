@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Super League FF</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-icon">SL</div>
+        <div>
+          <div style="font-weight: bold;">Super League</div>
+          <div style="font-size: 12px; color: #aaa;">Admin Area</div>
+        </div>
+      </div>
+      
+      <div class="sidebar-nav">
+        <button class="nav-item active" data-section="dashboard">Dashboard</button>
+        <button class="nav-item" data-section="slff">SLFF</button>
+      </div>
+      
+      <div class="sidebar-footer">
+        <div id="userInfo" style="font-size: 12px; margin-bottom: 15px;">
+          <div id="adminName"></div>
+          <div id="adminLevel" style="color: #e26f0f;"></div>
+        </div>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+    
+    <div class="main-content">
+      <div class="header">
+        <div>
+          <span id="pageTitle">Dashboard</span>
+          <span class="admin-level-badge" id="levelBadge"></span>
+        </div>
+      </div>
+      
+      <div id="dashboard" class="section active">
+        <div class="welcome-card">
+          <h2 id="welcomeMsg">Welcome</h2>
+          <p>Super League FF Admin Portal</p>
+        </div>
+        
+        <div class="access-info">
+          <strong>Protected Admin Area</strong><br>
+          <span id="accessLevels"></span><br>
+          Your level: <strong id="yourLevel"></strong>
+        </div>
+        
+        <div class="grid" id="dashboardCards"></div>
+      </div>
+      
+      <div id="slff" class="section">
+        <h2 style="margin-bottom: 20px;">SLFF Management</h2>
+        <div id="slffContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./js/auth.js"></script>
+  <script src="./js/admin.js"></script>
+</body>
+</html>
