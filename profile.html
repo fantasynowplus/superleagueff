@@ -3,322 +3,167 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Profile — Super League FF</title>
+  <title>My Profile</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
     .profile-container {
       max-width: 600px;
       margin: 40px auto;
       padding: 40px;
-      border: 4px solid #e26f0f;
+      border: 1px solid #e26f0f;
       border-radius: 8px;
       background: #f9f7f4;
     }
-    .profile-header {
-      margin-bottom: 30px;
-    }
-    .profile-container h1 {
-      color: #06192b;
-      margin: 0;
-      display: inline;
-    }
-    .user-email {
-      color: #666;
-      font-size: 14px;
-      margin-top: 10px;
-      display: block;
-    }
-    .edit-btn {
-      background: none;
-      color: #e26f0f;
-      border: none;
-      padding: 0;
-      margin: 0;
-      margin-left: 15px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: inherit;
-      text-decoration: none;
-      display: inline;
-    }
-    .edit-btn:hover {
-      color: #c95d0a;
-    }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 600;
-      color: #06192b;
-      font-size: 14px;
-    }
-    .view-mode {
-      padding: 10px 12px;
-      background: #f0f0f0;
-      border-radius: 4px;
-      color: #333;
-      font-size: 16px;
-      min-height: 20px;
-    }
-    input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 16px;
-      box-sizing: border-box;
-      font-family: inherit;
-      display: none;
-    }
-    input.edit-mode {
-      display: block;
-    }
-    input:focus {
-      outline: none;
-      border-color: #e26f0f;
-      box-shadow: 0 0 0 2px rgba(226, 111, 15, 0.1);
-    }
-    .form-section {
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #ddd;
-    }
-    .form-section h3 {
-      color: #06192b;
-      font-size: 16px;
-      margin-bottom: 15px;
-      margin-top: 0;
-    }
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 30px;
-      display: none;
-    }
-    .button-group.show {
-      display: flex;
-    }
-    button {
-      flex: 1;
-      padding: 12px;
-      background: #e26f0f;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background 0.2s;
-    }
-    button:hover {
-      background: #c95d0a;
-    }
-    .cancel-btn {
-      background: #999;
-    }
-    .cancel-btn:hover {
-      background: #777;
-    }
-    .logout-btn {
-      background: #06192b;
-      width: 100%;
-      margin-top: 20px;
-    }
-    .logout-btn:hover {
-      background: #000;
-    }
-    .success {
-      color: #16a34a;
-      margin-top: 10px;
-      padding: 8px;
-      background: #dcfce7;
-      border-radius: 4px;
-      display: none;
-    }
-    .success.show {
-      display: block;
-    }
-    .error {
-      color: #dc2626;
-      margin-top: 10px;
-      padding: 8px;
-      background: #fee2e2;
-      border-radius: 4px;
-      display: none;
-    }
-    .error.show {
-      display: block;
-    }
+    h1 { color: #06192b; display: inline; margin: 0; }
+    .edit-link { color: #e26f0f; cursor: pointer; font-weight: 600; margin-left: 15px; text-decoration: none; }
+    .edit-link:hover { color: #c95d0a; }
+    .user-email { color: #666; font-size: 14px; margin-top: 10px; display: block; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-weight: 600; color: #06192b; font-size: 14px; margin-bottom: 6px; }
+    .view-value { padding: 10px 12px; background: #f0f0f0; border-radius: 4px; color: #333; }
+    .edit-input { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; display: none; }
+    .edit-input.active { display: block; }
+    .section-title { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 16px; color: #06192b; font-weight: 600; }
+    .button-row { display: none; gap: 10px; margin-top: 30px; }
+    .button-row.active { display: flex; }
+    button { flex: 1; padding: 12px; background: #e26f0f; color: white; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #c95d0a; }
+    .cancel-btn { background: #999; }
+    .cancel-btn:hover { background: #777; }
+    .logout-btn { width: 100%; background: #06192b; margin-top: 20px; }
+    .logout-btn:hover { background: #000; }
+    .message { margin-top: 10px; padding: 8px; border-radius: 4px; display: none; }
+    .message.show { display: block; }
+    .success { background: #dcfce7; color: #16a34a; }
+    .error { background: #fee2e2; color: #dc2626; }
   </style>
 </head>
 <body>
   <div class="profile-container">
-    <div class="profile-header">
-      <h1>My Profile</h1>
-      <button class="edit-btn" id="edit-btn">Edit</button>
-      <p class="user-email" id="user-email"></p>
-    </div>
+    <h1>My Profile</h1>
+    <a class="edit-link" id="editLink">Edit</a>
+    <p class="user-email" id="userEmail"></p>
 
-    <form id="profile-form">
+    <form id="profileForm">
       <div class="form-group">
         <label>Full Name</label>
-        <div class="view-mode" id="name-view"></div>
-        <input type="text" id="name">
+        <div class="view-value" id="nameView"></div>
+        <input class="edit-input" id="nameInput" type="text">
       </div>
 
       <div class="form-group">
         <label>Cell Phone</label>
-        <div class="view-mode" id="cell_phone-view"></div>
-        <input type="tel" id="cell_phone">
+        <div class="view-value" id="phoneView"></div>
+        <input class="edit-input" id="phoneInput" type="tel">
       </div>
 
       <div class="form-group">
         <label>Location</label>
-        <div class="view-mode" id="location-view"></div>
-        <input type="text" id="location">
+        <div class="view-value" id="locationView"></div>
+        <input class="edit-input" id="locationInput" type="text">
       </div>
 
-      <div class="form-section">
-        <h3>Social Media</h3>
-        <div class="form-group">
-          <label>X (Twitter)</label>
-          <div class="view-mode" id="x_handle-view"></div>
-          <input type="text" id="x_handle" placeholder="@username">
-        </div>
-        <div class="form-group">
-          <label>Bluesky</label>
-          <div class="view-mode" id="bluesky_handle-view"></div>
-          <input type="text" id="bluesky_handle" placeholder="username.bsky.social">
-        </div>
-        <div class="form-group">
-          <label>Discord</label>
-          <div class="view-mode" id="discord_handle-view"></div>
-          <input type="text" id="discord_handle" placeholder="username#0000">
-        </div>
+      <div class="section-title">Social Media</div>
+      <div class="form-group">
+        <label>X (Twitter)</label>
+        <div class="view-value" id="xView"></div>
+        <input class="edit-input" id="xInput" type="text" placeholder="@username">
+      </div>
+      <div class="form-group">
+        <label>Bluesky</label>
+        <div class="view-value" id="bskyView"></div>
+        <input class="edit-input" id="bskyInput" type="text" placeholder="username.bsky.social">
+      </div>
+      <div class="form-group">
+        <label>Discord</label>
+        <div class="view-value" id="discordView"></div>
+        <input class="edit-input" id="discordInput" type="text" placeholder="username#0000">
       </div>
 
-      <div class="form-section">
-        <h3>Fantasy Football</h3>
-        <div class="form-group">
-          <label>Sleeper Handle</label>
-          <div class="view-mode" id="sleeper_handle-view"></div>
-          <input type="text" id="sleeper_handle">
-        </div>
-        <div class="form-group">
-          <label>MFL Handle</label>
-          <div class="view-mode" id="mfl_handle-view"></div>
-          <input type="text" id="mfl_handle">
-        </div>
+      <div class="section-title">Fantasy Football</div>
+      <div class="form-group">
+        <label>Sleeper Handle</label>
+        <div class="view-value" id="sleeperView"></div>
+        <input class="edit-input" id="sleeperInput" type="text">
+      </div>
+      <div class="form-group">
+        <label>MFL Handle</label>
+        <div class="view-value" id="mflView"></div>
+        <input class="edit-input" id="mflInput" type="text">
       </div>
 
-      <div id="message" class="success"></div>
-      <div id="error" class="error"></div>
+      <div class="message" id="messageBox"></div>
 
-      <div class="button-group" id="button-group">
-        <button type="submit">Save Changes</button>
-        <button type="button" id="cancel-btn" class="cancel-btn">Cancel</button>
+      <div class="button-row" id="buttonRow">
+        <button type="submit">Save</button>
+        <button type="button" class="cancel-btn" id="cancelBtn">Cancel</button>
       </div>
     </form>
 
-    <button type="button" id="logout-btn" class="logout-btn">Logout</button>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
   </div>
 
   <script src="./js/auth.js"></script>
   <script>
-    const profileForm = document.getElementById('profile-form');
-    const messageEl = document.getElementById('message');
-    const errorEl = document.getElementById('error');
-    const editBtn = document.getElementById('edit-btn');
-    const cancelBtn = document.getElementById('cancel-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const buttonGroup = document.getElementById('button-group');
+    const fields = {
+      name: { view: 'nameView', input: 'nameInput' },
+      cell_phone: { view: 'phoneView', input: 'phoneInput' },
+      location: { view: 'locationView', input: 'locationInput' },
+      x_handle: { view: 'xView', input: 'xInput' },
+      bluesky_handle: { view: 'bskyView', input: 'bskyInput' },
+      discord_handle: { view: 'discordView', input: 'discordInput' },
+      sleeper_handle: { view: 'sleeperView', input: 'sleeperInput' },
+      mfl_handle: { view: 'mflView', input: 'mflInput' }
+    };
 
-    const fields = ['name', 'cell_phone', 'location', 'x_handle', 'bluesky_handle', 'discord_handle', 'sleeper_handle', 'mfl_handle'];
-
-    function toggleEditMode(isEditing) {
-      fields.forEach(field => {
-        const input = document.getElementById(field);
-        const view = document.getElementById(`${field}-view`);
-        if (input && view) {
-          if (isEditing) {
-            view.style.display = 'none';
-            input.classList.add('edit-mode');
-          } else {
-            view.style.display = 'block';
-            input.classList.remove('edit-mode');
-          }
-        }
-      });
-      editBtn.style.display = isEditing ? 'none' : 'inline';
-      buttonGroup.classList.toggle('show', isEditing);
-    }
-
-    async function loadProfile() {
+    function displayProfile() {
       if (!auth.isAuthenticated()) {
         window.location.href = './login.html';
         return;
       }
-
-      document.getElementById('user-email').textContent = `Email: ${auth.user.email}`;
-
-      const profile = auth.profile;
-      
-      fields.forEach(field => {
-        const input = document.getElementById(field);
-        const view = document.getElementById(`${field}-view`);
-        if (input && view) {
-          const value = profile[field] || '';
-          input.value = value;
-          view.textContent = value || '(not set)';
-        }
+      document.getElementById('userEmail').textContent = 'Email: ' + auth.user.email;
+      Object.entries(fields).forEach(([key, ids]) => {
+        const value = auth.profile[key] || '';
+        document.getElementById(ids.view).textContent = value || '(not set)';
+        document.getElementById(ids.input).value = value;
       });
     }
 
-    editBtn.addEventListener('click', () => {
-      toggleEditMode(true);
-    });
+    function toggleEdit(show) {
+      Object.values(fields).forEach(ids => {
+        document.getElementById(ids.input).classList.toggle('active', show);
+        document.getElementById(ids.view).style.display = show ? 'none' : 'block';
+      });
+      document.getElementById('editLink').style.display = show ? 'none' : 'inline';
+      document.getElementById('buttonRow').classList.toggle('active', show);
+    }
 
-    cancelBtn.addEventListener('click', () => {
-      loadProfile();
-      toggleEditMode(false);
-    });
-
-    profileForm.addEventListener('submit', async (e) => {
+    document.getElementById('editLink').onclick = () => toggleEdit(true);
+    document.getElementById('cancelBtn').onclick = () => { toggleEdit(false); displayProfile(); };
+    
+    document.getElementById('profileForm').onsubmit = async (e) => {
       e.preventDefault();
-      errorEl.classList.remove('show');
-      messageEl.classList.remove('show');
-
+      const updates = {};
+      Object.entries(fields).forEach(([key, ids]) => {
+        updates[key] = document.getElementById(ids.input).value;
+      });
       try {
-        await auth.updateProfile({
-          name: document.getElementById('name').value,
-          cell_phone: document.getElementById('cell_phone').value,
-          location: document.getElementById('location').value,
-          x_handle: document.getElementById('x_handle').value,
-          bluesky_handle: document.getElementById('bluesky_handle').value,
-          discord_handle: document.getElementById('discord_handle').value,
-          sleeper_handle: document.getElementById('sleeper_handle').value,
-          mfl_handle: document.getElementById('mfl_handle').value,
-        });
-        messageEl.textContent = 'Profile saved!';
-        messageEl.classList.add('show');
-        setTimeout(() => {
-          toggleEditMode(false);
-          loadProfile();
-        }, 1500);
+        await auth.updateProfile(updates);
+        document.getElementById('messageBox').textContent = 'Saved!';
+        document.getElementById('messageBox').className = 'message success show';
+        setTimeout(() => { toggleEdit(false); displayProfile(); }, 1500);
       } catch (err) {
-        errorEl.textContent = err.message;
-        errorEl.classList.add('show');
+        document.getElementById('messageBox').textContent = err.message;
+        document.getElementById('messageBox').className = 'message error show';
       }
-    });
+    };
 
-    logoutBtn.addEventListener('click', async () => {
+    document.getElementById('logoutBtn').onclick = async () => {
       await auth.logout();
       window.location.href = './login.html';
-    });
+    };
 
-    loadProfile();
+    displayProfile();
   </script>
 </body>
 </html>
