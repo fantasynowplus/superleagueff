@@ -1,6 +1,3 @@
-const SUPABASE_URL = 'https://fckobcxprmudfpxdmswi.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_lUJ8FDkLUorRO5PQwvMHTA_5_W_mbh2';
-
 let currentUser = null;
 let currentProfile = null;
 
