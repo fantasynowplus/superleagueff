@@ -146,8 +146,15 @@ async function loadAllUsers() {
   
   try {
     const token = localStorage.getItem('sb-auth-token');
+    const adminLevel = currentProfile.admin_level || 0;
+    
     if (!token) {
       throw new Error('No auth token found');
+    }
+
+    if (adminLevel === 0) {
+      document.getElementById('usersContent').innerHTML = '<div class="error">You do not have permission to view users.</div>';
+      return;
     }
 
     console.log('Fetching users...');
@@ -158,14 +165,12 @@ async function loadAllUsers() {
       }
     });
 
-    console.log('Response status:', res.status);
-
     if (!res.ok) {
       const error = await res.text();
       throw new Error(`Failed to load users: ${res.status} ${error}`);
     }
 
-    const users = await res.json();
+    let users = await res.json();
     console.log('Users loaded:', users);
 
     if (!users || users.length === 0) {
@@ -173,27 +178,33 @@ async function loadAllUsers() {
       return;
     }
 
+    if (adminLevel === 1) {
+      users = users.filter(u => u.assigned_league);
+    }
+
+    const canEdit = adminLevel >= 7;
+    const canClick = adminLevel >= 4;
+    const clickableClass = canClick && adminLevel !== 4 ? ' onclick="viewUserProfile(\'USER_ID\')"' : '';
+
     const html = `
       <table class="users-table">
         <thead>
           <tr>
             <th>Name</th>
             <th>Email</th>
+            <th>League</th>
             <th>Sleeper Handle</th>
             <th>MFL Handle</th>
-            <th>Verified</th>
-            <th>Admin Level</th>
           </tr>
         </thead>
         <tbody>
           ${users.map(u => `
-            <tr onclick="viewUserProfile('${u.id}')">
-              <td><a class="user-link">${u.name || '(not set)'}</a></td>
+            <tr ${adminLevel >= 7 ? `onclick="viewUserProfile('${u.id}')"` : ''}>
+              <td>${adminLevel >= 7 ? `<a class="user-link">${u.name || '(not set)'}</a>` : (u.name || '(not set)')}</td>
               <td>${u.email}</td>
+              <td>${u.assigned_league || '-'}</td>
               <td>${u.sleeper_handle || '-'}</td>
               <td>${u.mfl_handle || '-'}</td>
-              <td>${u.is_verified ? '✓' : '✗'}</td>
-              <td>${u.admin_level || 0}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -208,6 +219,13 @@ async function loadAllUsers() {
 }
 
 async function viewUserProfile(userId) {
+  const adminLevel = currentProfile.admin_level || 0;
+  
+  if (adminLevel < 7) {
+    alert('You do not have permission to view user details.');
+    return;
+  }
+
   try {
     const token = localStorage.getItem('sb-auth-token');
     const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
@@ -235,6 +253,9 @@ async function viewUserProfile(userId) {
 }
 
 function showUserDetailModal(user) {
+  const adminLevel = currentProfile.admin_level || 0;
+  const canEdit = adminLevel >= 7;
+  
   const modal = document.createElement('div');
   modal.className = 'user-detail-modal';
   modal.innerHTML = `
@@ -246,12 +267,12 @@ function showUserDetailModal(user) {
       
       <div class="profile-grid">
         <div class="profile-item">
-          <label>Email</label>
-          <p>${user.email}</p>
-        </div>
-        <div class="profile-item">
           <label>Full Name</label>
           <p>${user.name || '-'}</p>
+        </div>
+        <div class="profile-item">
+          <label>Email</label>
+          <p>${user.email}</p>
         </div>
         <div class="profile-item">
           <label>Cell Phone</label>
@@ -261,8 +282,6 @@ function showUserDetailModal(user) {
           <label>Location</label>
           <p>${user.location || '-'}</p>
         </div>
-        
-        <div class="profile-section">Social Media</div>
         
         <div class="profile-item">
           <label>X (Twitter)</label>
@@ -276,13 +295,11 @@ function showUserDetailModal(user) {
           <label>Discord</label>
           <p>${user.discord_handle || '-'}</p>
         </div>
-        
-        <div class="profile-section">Fantasy Football</div>
-        
         <div class="profile-item">
           <label>Sleeper Handle</label>
           <p>${user.sleeper_handle || '-'}</p>
         </div>
+        
         <div class="profile-item">
           <label>MFL Handle</label>
           <p>${user.mfl_handle || '-'}</p>
@@ -295,16 +312,14 @@ function showUserDetailModal(user) {
           <label>Draft Spot</label>
           <p>${user.draft_spot || '-'}</p>
         </div>
-        
-        <div class="profile-section">Admin Settings</div>
+        <div class="profile-item">
+          <label>Verified</label>
+          <p>${user.is_verified ? '✓ Yes' : '✗ No'}</p>
+        </div>
         
         <div class="profile-item">
           <label>Admin Level</label>
           <p>${user.admin_level || 0}</p>
-        </div>
-        <div class="profile-item">
-          <label>Verified</label>
-          <p>${user.is_verified ? '✓ Yes' : '✗ No'}</p>
         </div>
         <div class="profile-item">
           <label>Created</label>
@@ -315,10 +330,16 @@ function showUserDetailModal(user) {
           <p>${new Date(user.updated_at).toLocaleDateString()}</p>
         </div>
       </div>
+      
+      ${canEdit ? `<button class="modal-button" onclick="editUserProfile('${user.id}')">Edit Profile</button>` : ''}
     </div>
   `;
   
   document.body.appendChild(modal);
+}
+
+function editUserProfile(userId) {
+  alert('Edit functionality coming soon');
 }
 
 async function loadLeagues() {
