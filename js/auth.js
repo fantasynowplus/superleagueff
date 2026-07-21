@@ -40,7 +40,7 @@ class AuthManager {
   }
 
   async signup(email, password, name) {
-    if (!email || !password || !name) {
+    if (!email || !password) {
       throw new Error('Please fill in all fields.');
     }
     if (password.length < 6) {
