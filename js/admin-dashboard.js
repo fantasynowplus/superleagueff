@@ -3,7 +3,7 @@ let currentProfile = null;
 
 async function initAdmin() {
   if (!auth.isAuthenticated()) {
-    window.location.href = './login.html';
+    window.location.href = './admin.html';
     return;
   }
 
@@ -19,103 +19,133 @@ async function initAdmin() {
   const adminLevel = currentProfile.admin_level || 0;
 
   if (adminLevel === 0) {
-    document.body.innerHTML = '<div style="padding: 40px; text-align: center;"><h1>Access Denied</h1><p>You do not have permission to access the admin dashboard.</p><a href="./profile.html" style="color: #e26f0f;">Go to Profile</a></div>';
+    window.location.href = './admin.html';
     return;
   }
 
   setupUI(adminLevel);
-  setupEventListeners();
+  setupEventListeners(adminLevel);
   loadDashboard(adminLevel);
 }
 
 function setupUI(level) {
   const levelNames = {
-    1: 'Level 1',
-    4: 'Level 4',
-    7: 'Level 7',
+    1: 'Level 1 Admin',
+    4: 'Level 4 Admin',
+    7: 'Level 7 Admin',
     9: 'Super Admin'
   };
 
-  document.getElementById('welcomeMsg').textContent = `Welcome, ${currentProfile.name || 'Admin'}`;
-  document.getElementById('adminName').textContent = currentProfile.name || 'Admin';
+  const initial = currentProfile.name ? currentProfile.name.charAt(0).toUpperCase() : 'A';
+
+  document.getElementById('sidebarUserName').textContent = currentProfile.name || 'Admin';
+  document.getElementById('sidebarUserLevel').textContent = levelNames[level] || `Level ${level}`;
   document.getElementById('adminLevel').textContent = levelNames[level] || `Level ${level}`;
-  document.getElementById('levelBadge').textContent = levelNames[level] || `Level ${level}`;
+  document.getElementById('welcomeMsg').textContent = `Welcome, ${currentProfile.name || 'Admin'}`;
+  document.getElementById('headerUserName').textContent = currentProfile.name || 'Admin';
   document.getElementById('yourLevel').textContent = levelNames[level] || `Level ${level}`;
-  document.getElementById('accessLevels').textContent = 'Allowed levels: 1, 4, 7, 9';
+  document.querySelector('.user-avatar').textContent = initial;
 }
 
-function setupEventListeners() {
-  document.querySelectorAll('[data-section]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-section]').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+function setupEventListeners(level) {
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+      const section = link.dataset.section;
       
-      btn.classList.add('active');
-      const section = btn.dataset.section;
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+      
+      link.classList.add('active');
       document.getElementById(section).classList.add('active');
-      document.getElementById('pageTitle').textContent = section.charAt(0).toUpperCase() + section.slice(1);
+      
+      const titles = {
+        dashboard: 'Dashboard',
+        users: 'Users',
+        leagues: 'Leagues',
+        'admin-manage': 'Admin Management'
+      };
+      document.getElementById('pageTitle').textContent = titles[section] || 'Dashboard';
     });
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', async () => {
-      await auth.logout();
-      window.location.href = './admin.html';
-    });
-  
-    document.getElementById('headerLogout').addEventListener('click', async () => {
-      await auth.logout();
-      window.location.href = './admin.html';
-    });
-  
-    document.getElementById('headerUserName').textContent = currentProfile.name || 'Admin';
+  document.getElementById('sidebarLogout').addEventListener('click', logout);
+  document.getElementById('headerLogout').addEventListener('click', logout);
+
+  async function logout() {
+    await auth.logout();
+    window.location.href = './admin.html';
+  }
+
+  if (level >= 1) {
+    document.querySelector('[data-section="users"]').style.display = 'flex';
+  }
+  if (level >= 1) {
+    document.querySelector('[data-section="leagues"]').style.display = 'flex';
+  }
+  if (level >= 9) {
+    document.querySelector('[data-section="admin-manage"]').style.display = 'flex';
+  }
 }
 
 async function loadDashboard(level) {
   const cardsHTML = level === 9 ? `
-    <div class="card">
-      <h3>👥 All Users</h3>
-      <p>View and manage all user profiles</p>
-      <button class="card-button" onclick="loadAllUsers()">View Users</button>
+    <div class="dashboard-card" onclick="navigateTo('users')">
+      <div class="card-icon">👥</div>
+      <h3 class="card-title">All Users</h3>
+      <p class="card-description">View and manage all user profiles</p>
+      <button class="card-button">View Users</button>
     </div>
-    <div class="card">
-      <h3>⚙️ Manage Admins</h3>
-      <p>Adjust admin levels and permissions</p>
-      <button class="card-button" onclick="loadAdminManagement()">Manage</button>
+    <div class="dashboard-card" onclick="navigateTo('leagues')">
+      <div class="card-icon">🏆</div>
+      <h3 class="card-title">Leagues</h3>
+      <p class="card-description">Manage leagues and assignments</p>
+      <button class="card-button">Manage Leagues</button>
     </div>
-    <div class="card">
-      <h3>✓ Verification</h3>
-      <p>Verify user information</p>
-      <button class="card-button" onclick="loadVerification()">Verify</button>
+    <div class="dashboard-card" onclick="navigateTo('admin-manage')">
+      <div class="card-icon">⚙️</div>
+      <h3 class="card-title">Admin Management</h3>
+      <p class="card-description">Adjust admin levels and permissions</p>
+      <button class="card-button">Manage Admins</button>
     </div>
   ` : level === 7 ? `
-    <div class="card">
-      <h3>👥 All Users</h3>
-      <p>View and manage all user profiles</p>
-      <button class="card-button" onclick="loadAllUsers()">View Users</button>
+    <div class="dashboard-card" onclick="navigateTo('users')">
+      <div class="card-icon">👥</div>
+      <h3 class="card-title">All Users</h3>
+      <p class="card-description">View and manage user profiles</p>
+      <button class="card-button">View Users</button>
     </div>
-    <div class="card">
-      <h3>✓ Verification</h3>
-      <p>Verify user information</p>
-      <button class="card-button" onclick="loadVerification()">Verify</button>
+    <div class="dashboard-card" onclick="navigateTo('leagues')">
+      <div class="card-icon">🏆</div>
+      <h3 class="card-title">Leagues</h3>
+      <p class="card-description">Manage leagues and assignments</p>
+      <button class="card-button">Manage Leagues</button>
     </div>
   ` : level === 4 ? `
-    <div class="card">
-      <h3>👥 All Users</h3>
-      <p>View all user profiles (read-only)</p>
-      <button class="card-button" onclick="loadAllUsers()">View Users</button>
+    <div class="dashboard-card" onclick="navigateTo('users')">
+      <div class="card-icon">👥</div>
+      <h3 class="card-title">All Users</h3>
+      <p class="card-description">View all user profiles</p>
+      <button class="card-button">View Users</button>
     </div>
   ` : `
-    <div class="card">
-      <h3>⚡ League Management</h3>
-      <p>Manage your assigned leagues and users</p>
-      <button class="card-button" onclick="loadMyLeagues()">Manage</button>
+    <div class="dashboard-card" onclick="navigateTo('leagues')">
+      <div class="card-icon">⚡</div>
+      <h3 class="card-title">Your Leagues</h3>
+      <p class="card-description">Manage your assigned leagues</p>
+      <button class="card-button">Manage</button>
     </div>
   `;
 
   document.getElementById('dashboardCards').innerHTML = cardsHTML;
 }
 
+function navigateTo(section) {
+  document.querySelector(`[data-section="${section}"]`).click();
+}
+
 async function loadAllUsers() {
+  document.getElementById('usersContent').innerHTML = '<div class="loading">Loading users...</div>';
+  
   const token = localStorage.getItem('sb-auth-token');
   const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
     headers: {
@@ -125,7 +155,7 @@ async function loadAllUsers() {
   });
 
   if (!res.ok) {
-    document.getElementById('slffContent').innerHTML = '<div class="error">Failed to load users</div>';
+    document.getElementById('usersContent').innerHTML = '<div class="error">Failed to load users</div>';
     return;
   }
 
@@ -136,10 +166,10 @@ async function loadAllUsers() {
         <tr>
           <th>Name</th>
           <th>Email</th>
-          <th>Sleeper</th>
-          <th>MFL</th>
+          <th>Sleeper Handle</th>
+          <th>MFL Handle</th>
           <th>Verified</th>
-          <th>Level</th>
+          <th>Admin Level</th>
         </tr>
       </thead>
       <tbody>
@@ -150,30 +180,14 @@ async function loadAllUsers() {
             <td>${u.sleeper_handle || '-'}</td>
             <td>${u.mfl_handle || '-'}</td>
             <td>${u.is_verified ? '✓' : '✗'}</td>
-            <td>${u.admin_level}</td>
+            <td>${u.admin_level || 0}</td>
           </tr>
         `).join('')}
       </tbody>
     </table>
   `;
   
-  document.getElementById('slffContent').innerHTML = html;
-  document.getElementById('slff').classList.add('active');
-  document.getElementById('dashboard').classList.remove('active');
-  document.querySelector('[data-section="slff"]').classList.add('active');
-  document.querySelector('[data-section="dashboard"]').classList.remove('active');
-}
-
-async function loadMyLeagues() {
-  document.getElementById('slffContent').innerHTML = '<div class="loading">Loading leagues...</div>';
-}
-
-async function loadAdminManagement() {
-  document.getElementById('slffContent').innerHTML = '<div class="loading">Loading admin management...</div>';
-}
-
-async function loadVerification() {
-  document.getElementById('slffContent').innerHTML = '<div class="loading">Loading verification...</div>';
+  document.getElementById('usersContent').innerHTML = html;
 }
 
 initAdmin();
