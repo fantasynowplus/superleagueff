@@ -14,14 +14,32 @@
       border-radius: 8px;
       background: #f9f7f4;
     }
+    .profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
     .profile-container h1 {
       color: #06192b;
-      margin-bottom: 10px;
+      margin: 0;
     }
     .user-email {
       color: #666;
       font-size: 14px;
-      margin-bottom: 30px;
+      margin-top: 5px;
+    }
+    .edit-btn {
+      background: #e26f0f;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .edit-btn:hover {
+      background: #c95d0a;
     }
     .form-group {
       margin-bottom: 20px;
@@ -33,6 +51,14 @@
       color: #06192b;
       font-size: 14px;
     }
+    .view-mode {
+      padding: 10px 12px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      color: #333;
+      font-size: 16px;
+      min-height: 20px;
+    }
     input {
       width: 100%;
       padding: 10px 12px;
@@ -41,11 +67,15 @@
       font-size: 16px;
       box-sizing: border-box;
       font-family: inherit;
+      display: none;
     }
     input:focus {
       outline: none;
       border-color: #e26f0f;
       box-shadow: 0 0 0 2px rgba(226, 111, 15, 0.1);
+    }
+    input.edit-mode {
+      display: block;
     }
     .form-section {
       margin-top: 30px;
@@ -58,8 +88,13 @@
       margin-bottom: 15px;
       margin-top: 0;
     }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+    }
     button {
-      width: 100%;
+      flex: 1;
       padding: 12px;
       background: #e26f0f;
       color: white;
@@ -68,7 +103,6 @@
       font-weight: 600;
       cursor: pointer;
       font-size: 16px;
-      margin-top: 10px;
       transition: background 0.2s;
     }
     button:hover {
@@ -79,10 +113,15 @@
     }
     .logout-btn {
       background: #06192b;
-      margin-top: 20px;
     }
     .logout-btn:hover {
       background: #000;
+    }
+    .cancel-btn {
+      background: #999;
+    }
+    .cancel-btn:hover {
+      background: #777;
     }
     .success {
       color: #16a34a;
@@ -101,34 +140,43 @@
       padding: 8px;
       background: #fee2e2;
       border-radius: 4px;
+      display: none;
+    }
+    .error.show {
+      display: block;
     }
     .loading {
       opacity: 0.6;
       pointer-events: none;
     }
-    .loading::after {
-      content: ' (saving...)';
-    }
   </style>
 </head>
 <body>
   <div class="profile-container">
-    <h1>My Profile</h1>
-    <p class="user-email" id="user-email"></p>
+    <div class="profile-header">
+      <div>
+        <h1>My Profile</h1>
+        <p class="user-email" id="user-email"></p>
+      </div>
+      <button class="edit-btn" id="edit-btn">Edit</button>
+    </div>
 
     <form id="profile-form">
       <div class="form-group">
         <label for="name">Full Name</label>
+        <div class="view-mode" id="name-view"></div>
         <input type="text" id="name">
       </div>
 
       <div class="form-group">
         <label for="cell_phone">Cell Phone</label>
+        <div class="view-mode" id="cell_phone-view"></div>
         <input type="tel" id="cell_phone">
       </div>
 
       <div class="form-group">
         <label for="location">Location</label>
+        <div class="view-mode" id="location-view"></div>
         <input type="text" id="location">
       </div>
 
@@ -136,14 +184,17 @@
         <h3>Social Media</h3>
         <div class="form-group">
           <label for="x_handle">X (Twitter)</label>
+          <div class="view-mode" id="x_handle-view"></div>
           <input type="text" id="x_handle" placeholder="@username">
         </div>
         <div class="form-group">
           <label for="bluesky_handle">Bluesky</label>
+          <div class="view-mode" id="bluesky_handle-view"></div>
           <input type="text" id="bluesky_handle" placeholder="username.bsky.social">
         </div>
         <div class="form-group">
           <label for="discord_handle">Discord</label>
+          <div class="view-mode" id="discord_handle-view"></div>
           <input type="text" id="discord_handle" placeholder="username#0000">
         </div>
       </div>
@@ -152,29 +203,56 @@
         <h3>Fantasy Football</h3>
         <div class="form-group">
           <label for="sleeper_handle">Sleeper Handle</label>
+          <div class="view-mode" id="sleeper_handle-view"></div>
           <input type="text" id="sleeper_handle">
         </div>
         <div class="form-group">
           <label for="mfl_handle">MFL Handle</label>
+          <div class="view-mode" id="mfl_handle-view"></div>
           <input type="text" id="mfl_handle">
         </div>
       </div>
 
-      <button type="submit">Save Changes</button>
       <div id="message" class="success"></div>
-      <div id="error" class="error" style="display: none;"></div>
+      <div id="error" class="error"></div>
 
-      <button type="button" id="logout-btn" class="logout-btn">Logout</button>
+      <div class="button-group" id="button-group" style="display: none;">
+        <button type="submit" id="save-btn">Save Changes</button>
+        <button type="button" id="cancel-btn" class="cancel-btn">Cancel</button>
+      </div>
     </form>
+
+    <button type="button" id="logout-btn" class="logout-btn">Logout</button>
   </div>
 
-  <script src="js/auth.js"></script>
+  <script src="javascript/auth.js"></script>
   <script>
     const profileForm = document.getElementById('profile-form');
     const messageEl = document.getElementById('message');
     const errorEl = document.getElementById('error');
+    const editBtn = document.getElementById('edit-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
     const logoutBtn = document.getElementById('logout-btn');
-    const submitBtn = profileForm.querySelector('button[type="submit"]');
+    const buttonGroup = document.getElementById('button-group');
+    const saveBtn = document.getElementById('save-btn');
+
+    const fields = ['name', 'cell_phone', 'location', 'x_handle', 'bluesky_handle', 'discord_handle', 'sleeper_handle', 'mfl_handle'];
+
+    function toggleEditMode(isEditing) {
+      fields.forEach(field => {
+        const input = document.getElementById(field);
+        const view = document.getElementById(`${field}-view`);
+        if (isEditing) {
+          view.style.display = 'none';
+          input.classList.add('edit-mode');
+        } else {
+          view.style.display = 'block';
+          input.classList.remove('edit-mode');
+        }
+      });
+      editBtn.style.display = isEditing ? 'none' : 'block';
+      buttonGroup.style.display = isEditing ? 'flex' : 'none';
+    }
 
     async function loadProfile() {
       if (!auth.isAuthenticated()) {
@@ -185,21 +263,30 @@
       document.getElementById('user-email').textContent = `Email: ${auth.user.email}`;
 
       const profile = auth.profile;
-      document.getElementById('name').value = profile.name || '';
-      document.getElementById('cell_phone').value = profile.cell_phone || '';
-      document.getElementById('location').value = profile.location || '';
-      document.getElementById('x_handle').value = profile.x_handle || '';
-      document.getElementById('bluesky_handle').value = profile.bluesky_handle || '';
-      document.getElementById('discord_handle').value = profile.discord_handle || '';
-      document.getElementById('sleeper_handle').value = profile.sleeper_handle || '';
-      document.getElementById('mfl_handle').value = profile.mfl_handle || '';
+      
+      fields.forEach(field => {
+        const input = document.getElementById(field);
+        const view = document.getElementById(`${field}-view`);
+        const value = profile[field] || '';
+        input.value = value;
+        view.textContent = value || '(not set)';
+      });
     }
+
+    editBtn.addEventListener('click', () => {
+      toggleEditMode(true);
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      loadProfile();
+      toggleEditMode(false);
+    });
 
     profileForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      errorEl.style.display = 'none';
+      errorEl.classList.remove('show');
       messageEl.classList.remove('show');
-      submitBtn.classList.add('loading');
+      saveBtn.classList.add('loading');
 
       try {
         await auth.updateProfile({
@@ -214,11 +301,15 @@
         });
         messageEl.textContent = 'Profile saved!';
         messageEl.classList.add('show');
-        submitBtn.classList.remove('loading');
+        saveBtn.classList.remove('loading');
+        setTimeout(() => {
+          toggleEditMode(false);
+          loadProfile();
+        }, 1500);
       } catch (err) {
         errorEl.textContent = err.message;
-        errorEl.style.display = 'block';
-        submitBtn.classList.remove('loading');
+        errorEl.classList.add('show');
+        saveBtn.classList.remove('loading');
       }
     });
 
