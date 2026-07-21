@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Super League</title>
+  <title>Admin Dashboard - Super League FF</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/admin.css">
 </head>
@@ -11,7 +11,7 @@
   <div class="container">
     <div class="sidebar">
       <div class="sidebar-header">
-        <div class="sidebar-icon">SL</div>
+        <img src="./assets/images/League-Logo.png" alt="Super League" style="width: 40px; height: 40px; border-radius: 50%;">
         <div>
           <div style="font-weight: bold;">Super League</div>
           <div style="font-size: 12px; color: #aaa;">Admin Area</div>
@@ -38,12 +38,21 @@
           <span id="pageTitle">Dashboard</span>
           <span class="admin-level-badge" id="levelBadge"></span>
         </div>
+        <div class="header-user">
+          <span id="headerUserName"></span>
+          <button id="headerLogout" class="header-logout-btn">Logout</button>
+        </div>
       </div>
       
       <div id="dashboard" class="section active">
         <div class="welcome-card">
-          <h2 id="welcomeMsg">Welcome</h2>
-          <p>Super League FF Admin Portal</p>
+          <div class="welcome-card-content">
+            <div>
+              <h2 id="welcomeMsg">Welcome</h2>
+              <p>Super League FF Admin Portal</p>
+            </div>
+            <img src="./assets/images/Super-League-Banner.png" alt="Super League Banner" class="welcome-banner">
+          </div>
         </div>
         
         <div class="access-info">
