@@ -28,7 +28,34 @@ class AuthManager {
     }
   }
 
+  getErrorMessage(error) {
+    if (error.message) return error.message;
+    
+    if (error.error_code === 'user_already_exists') {
+      return 'This email is already registered. Please login instead.';
+    }
+    if (error.error_code === 'weak_password') {
+      return 'Password is too weak. Use at least 8 characters with uppercase, lowercase, and numbers.';
+    }
+    if (error.msg && error.msg.includes('already exists')) {
+      return 'This email is already registered. Please login instead.';
+    }
+    if (error.msg) return error.msg;
+    
+    return 'An error occurred. Please try again.';
+  }
+
   async signup(email, password, name) {
+    if (!email || !password || !name) {
+      throw new Error('Please fill in all fields.');
+    }
+    if (password.length < 6) {
+      throw new Error('Password must be at least 6 characters long.');
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('Please enter a valid email address.');
+    }
+
     const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
       method: 'POST',
       headers: {
@@ -38,20 +65,27 @@ class AuthManager {
       body: JSON.stringify({ email, password }),
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message);
+      throw new Error(this.getErrorMessage(data));
     }
 
-    const data = await res.json();
-    localStorage.setItem('sb-auth-token', data.session.access_token);
-    this.user = data.user;
-
-    await this.updateProfile({ name });
-    return data.user;
+    if (data.session && data.session.access_token) {
+      localStorage.setItem('sb-auth-token', data.session.access_token);
+      this.user = data.user;
+      await this.updateProfile({ name });
+      return data.user;
+    } else {
+      throw new Error('Check your email to confirm your account before logging in.');
+    }
   }
 
   async login(email, password) {
+    if (!email || !password) {
+      throw new Error('Please enter both email and password.');
+    }
+
     const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
       method: 'POST',
       headers: {
@@ -61,12 +95,15 @@ class AuthManager {
       body: JSON.stringify({ email, password }),
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error_description || err.message);
+      if (data.error_description === 'Invalid login credentials') {
+        throw new Error('Email or password is incorrect.');
+      }
+      throw new Error(this.getErrorMessage(data));
     }
 
-    const data = await res.json();
     localStorage.setItem('sb-auth-token', data.access_token);
     this.user = this.decodeJWT(data.access_token);
     await this.fetchProfile();
