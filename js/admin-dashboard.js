@@ -65,6 +65,14 @@ function setupEventListeners(level) {
         'admin-manage': 'Admin Management'
       };
       document.getElementById('pageTitle').textContent = titles[section] || 'Dashboard';
+
+      if (section === 'users') {
+        loadAllUsers();
+      } else if (section === 'leagues') {
+        loadLeagues();
+      } else if (section === 'admin-manage') {
+        loadAdminManagement();
+      }
     });
   });
 
@@ -74,16 +82,6 @@ function setupEventListeners(level) {
   async function logout() {
     await auth.logout();
     window.location.href = './admin.html';
-  }
-
-  if (level >= 1) {
-    document.querySelector('[data-section="users"]').style.display = 'flex';
-  }
-  if (level >= 1) {
-    document.querySelector('[data-section="leagues"]').style.display = 'flex';
-  }
-  if (level >= 9) {
-    document.querySelector('[data-section="admin-manage"]').style.display = 'flex';
   }
 }
 
@@ -146,48 +144,75 @@ function navigateTo(section) {
 async function loadAllUsers() {
   document.getElementById('usersContent').innerHTML = '<div class="loading">Loading users...</div>';
   
-  const token = localStorage.getItem('sb-auth-token');
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${token}`,
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    if (!token) {
+      throw new Error('No auth token found');
     }
-  });
 
-  if (!res.ok) {
-    document.getElementById('usersContent').innerHTML = '<div class="error">Failed to load users</div>';
-    return;
-  }
+    console.log('Fetching users...');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
 
-  const users = await res.json();
-  const html = `
-    <table class="users-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Sleeper Handle</th>
-          <th>MFL Handle</th>
-          <th>Verified</th>
-          <th>Admin Level</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${users.map(u => `
+    console.log('Response status:', res.status);
+
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(`Failed to load users: ${res.status} ${error}`);
+    }
+
+    const users = await res.json();
+    console.log('Users loaded:', users);
+
+    if (!users || users.length === 0) {
+      document.getElementById('usersContent').innerHTML = '<div class="loading">No users found</div>';
+      return;
+    }
+
+    const html = `
+      <table class="users-table">
+        <thead>
           <tr>
-            <td>${u.name || '(not set)'}</td>
-            <td>${u.email}</td>
-            <td>${u.sleeper_handle || '-'}</td>
-            <td>${u.mfl_handle || '-'}</td>
-            <td>${u.is_verified ? '✓' : '✗'}</td>
-            <td>${u.admin_level || 0}</td>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Sleeper Handle</th>
+            <th>MFL Handle</th>
+            <th>Verified</th>
+            <th>Admin Level</th>
           </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-  
-  document.getElementById('usersContent').innerHTML = html;
+        </thead>
+        <tbody>
+          ${users.map(u => `
+            <tr>
+              <td>${u.name || '(not set)'}</td>
+              <td>${u.email}</td>
+              <td>${u.sleeper_handle || '-'}</td>
+              <td>${u.mfl_handle || '-'}</td>
+              <td>${u.is_verified ? '✓' : '✗'}</td>
+              <td>${u.admin_level || 0}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    
+    document.getElementById('usersContent').innerHTML = html;
+  } catch (err) {
+    console.error('Error loading users:', err);
+    document.getElementById('usersContent').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+  }
+}
+
+async function loadLeagues() {
+  document.getElementById('leaguesContent').innerHTML = '<div class="loading">Loading leagues...</div>';
+}
+
+async function loadAdminManagement() {
+  document.getElementById('adminContent').innerHTML = '<div class="loading">Loading admin management...</div>';
 }
 
 initAdmin();
