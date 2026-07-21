@@ -433,12 +433,15 @@ async function saveUserChanges(userId) {
     }
   });
 
-  const button = event.target;
+  const button = document.querySelector('.modal-actions .modal-button:not(.cancel-btn)');
   button.disabled = true;
   button.style.opacity = '0.6';
 
   try {
     const token = localStorage.getItem('sb-auth-token');
+    
+    console.log('Saving user changes:', { userId, updates });
+    
     const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
       method: 'PATCH',
       headers: {
@@ -450,11 +453,16 @@ async function saveUserChanges(userId) {
       body: JSON.stringify({ ...updates, updated_at: new Date().toISOString() })
     });
 
+    console.log('Response status:', res.status);
+
     if (!res.ok) {
       const error = await res.text();
+      console.error('Supabase error:', error);
       throw new Error(`Failed to update profile: ${error}`);
     }
 
+    console.log('Update successful');
+    
     const messageEl = document.getElementById('edit-message');
     messageEl.textContent = 'Changes saved successfully!';
     messageEl.style.color = '#16a34a';
@@ -465,6 +473,7 @@ async function saveUserChanges(userId) {
       loadAllUsers();
     }, 1500);
   } catch (err) {
+    console.error('Error saving changes:', err);
     button.disabled = false;
     button.style.opacity = '1';
     const messageEl = document.getElementById('edit-message');
