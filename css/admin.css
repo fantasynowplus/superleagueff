@@ -551,11 +551,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
 }
 
 .modal-content {
@@ -563,7 +564,8 @@
   border: 2px solid #e26f0f;
   border-radius: 12px;
   padding: 40px;
-  max-width: 600px;
+  max-width: 1200px;
+  width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
@@ -585,6 +587,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.2s;
 }
 
 .modal-close:hover {
@@ -605,48 +608,71 @@
 
 .profile-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 30px;
 }
 
 .profile-item {
   background: rgba(226, 111, 15, 0.05);
   border: 1px solid #1a4d6f;
-  padding: 16px;
-  border-radius: 8px;
+  padding: 14px;
+  border-radius: 6px;
 }
 
 .profile-item label {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #e26f0f;
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .profile-item p {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   color: #fff;
+  word-break: break-word;
 }
 
-.profile-section {
-  grid-column: 1 / -1;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 2px solid #e26f0f;
-  font-size: 16px;
+.modal-button {
+  background: #e26f0f;
+  color: #000;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
   font-weight: 600;
-  color: #e26f0f;
-  text-transform: uppercase;
+  font-size: 14px;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.modal-button:hover {
+  background: #c95d0a;
+}
+
+@media (max-width: 1200px) {
+  .profile-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
   .modal-content {
-    width: 90%;
-    padding: 24px;
+    padding: 20px;
+  }
+
+  .profile-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 16px;
   }
 
   .profile-grid {
