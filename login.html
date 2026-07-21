@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — Super League</title>
+  <title>Login — Super League FF</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
     .login-container {
@@ -173,7 +173,7 @@
 
       try {
         await auth.login(email, password);
-        window.location.href = '/profile.html';
+        window.location.href = './profile.html';
       } catch (err) {
         loginError.textContent = err.message;
         loginError.classList.add('show');
@@ -193,7 +193,7 @@
 
       try {
         await auth.signup(email, password, name);
-        window.location.href = '/profile.html';
+        window.location.href = './profile.html';
       } catch (err) {
         signupError.textContent = err.message;
         signupError.classList.add('show');
