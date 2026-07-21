@@ -81,6 +81,14 @@ class AuthManager {
     }
   }
 
+  redirectToProfile() {
+    window.location.href = './profile.html';
+  }
+
+  redirectToLogin() {
+    window.location.href = './login.html';
+  }
+
   async login(email, password) {
     if (!email || !password) {
       throw new Error('Please enter both email and password.');
