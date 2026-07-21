@@ -158,12 +158,21 @@
       }
     };
 
+    async function initProfile() {
+  let attempts = 0;
+  while (!auth.profile && attempts < 50) {
+    await new Promise(r => setTimeout(r, 100));
+    attempts++;
+  }
+  displayProfile();
+}
+
+initProfile();
+
     document.getElementById('logoutBtn').onclick = async () => {
       await auth.logout();
       window.location.href = './login.html';
     };
-
-    displayProfile();
   </script>
 </body>
 </html>
