@@ -132,5 +132,13 @@
 </footer>
 
 <script src="js/main.js"></script>
+  <script>
+  if (window.location.hash) {
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    if (params.get('type') === 'recovery') {
+      window.location.href = './reset-password.html' + window.location.hash;
+    }
+  }
+</script>
 </body>
 </html>
