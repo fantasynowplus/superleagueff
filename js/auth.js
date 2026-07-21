@@ -156,6 +156,7 @@ class AuthManager {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${token}`,
+          'Prefer': 'return=representation',
         },
         body: JSON.stringify({
           ...updates,
@@ -164,10 +165,25 @@ class AuthManager {
       }
     );
 
-    if (!res.ok) throw new Error('Failed to update profile');
-    const data = await res.json();
-    this.profile = data[0];
-    return this.profile;
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Failed to update profile: ${errorText}`);
+    }
+
+    const responseText = await res.text();
+    if (!responseText) {
+      this.profile = { ...this.profile, ...updates };
+      return this.profile;
+    }
+
+    try {
+      const data = JSON.parse(responseText);
+      this.profile = Array.isArray(data) ? data[0] : data;
+      return this.profile;
+    } catch (e) {
+      this.profile = { ...this.profile, ...updates };
+      return this.profile;
+    }
   }
 
   isAuthenticated() {
