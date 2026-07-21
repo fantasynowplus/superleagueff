@@ -182,10 +182,6 @@ async function loadAllUsers() {
       users = users.filter(u => u.assigned_league);
     }
 
-    const canEdit = adminLevel >= 7;
-    const canClick = adminLevel >= 4;
-    const clickableClass = canClick && adminLevel !== 4 ? ' onclick="viewUserProfile(\'USER_ID\')"' : '';
-
     const html = `
       <table class="users-table">
         <thead>
@@ -265,7 +261,7 @@ function showUserDetailModal(user) {
       <h2>${user.name || 'User Profile'}</h2>
       <p class="modal-subtitle">${user.email}</p>
       
-      <div class="profile-grid">
+      <div class="profile-grid" id="profileGrid">
         <div class="profile-item">
           <label>Full Name</label>
           <p data-field="name">${user.name || '-'}</p>
@@ -331,7 +327,9 @@ function showUserDetailModal(user) {
         </div>
       </div>
       
-      ${canEdit ? `<button class="modal-button" onclick="editUserProfile('${user.id}')">Edit Profile</button>` : ''}
+      <div class="modal-actions" id="modalActions">
+        ${canEdit ? `<button class="modal-button" onclick="editUserProfile('${user.id}')">Edit Profile</button>` : ''}
+      </div>
     </div>
   `;
   
@@ -340,7 +338,7 @@ function showUserDetailModal(user) {
 
 function editUserProfile(userId) {
   const modal = document.querySelector('.user-detail-modal');
-  const profileGrid = modal.querySelector('.profile-grid');
+  const profileGrid = modal.querySelector('#profileGrid');
   
   const allFields = {
     name: 'Full Name',
@@ -399,16 +397,16 @@ function editUserProfile(userId) {
     }
   });
 
-  editHTML += `
-    <div style="display: flex; gap: 10px; margin-top: 20px;">
-      <button class="modal-button" onclick="saveUserChanges('${userId}')">Save Changes</button>
-      <button class="modal-button" style="background: #666;" onclick="cancelEdit()">Cancel</button>
-    </div>
-    <div id="edit-message"></div>
-  </div>`;
+  editHTML += '</div>';
 
   profileGrid.innerHTML = editHTML;
-  modal.querySelector('.modal-button').style.display = 'none';
+  
+  const modalActions = modal.querySelector('#modalActions');
+  modalActions.innerHTML = `
+    <button class="modal-button" onclick="saveUserChanges('${userId}')">Save Changes</button>
+    <button class="modal-button cancel-btn" onclick="location.reload()">Cancel</button>
+    <div id="edit-message"></div>
+  `;
 }
 
 async function saveUserChanges(userId) {
@@ -474,10 +472,6 @@ async function saveUserChanges(userId) {
     messageEl.style.color = '#dc2626';
     messageEl.style.marginTop = '10px';
   }
-}
-
-function cancelEdit() {
-  document.querySelector('.user-detail-modal').remove();
 }
 
 async function loadLeagues() {
