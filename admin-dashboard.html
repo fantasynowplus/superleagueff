@@ -3,72 +3,104 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Super League FF</title>
+  <title>Admin Dashboard - Super League</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
-  <div class="container">
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <img src="./assets/images/League-Logo.png" alt="Super League" style="width: 40px; height: 40px; border-radius: 50%;">
-        <div>
-          <div style="font-weight: bold;">Super League</div>
-          <div style="font-size: 12px; color: #aaa;">Admin Area</div>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <img src="./assets/images/League-Logo.png" alt="Super League" class="brand-logo">
+        <div class="brand-text">
+          <h3>Super League</h3>
+          <p>Admin Portal</p>
         </div>
       </div>
-      
-      <div class="sidebar-nav">
-        <button class="nav-item active" data-section="dashboard">Dashboard</button>
-        <button class="nav-item" data-section="slff">SLFF</button>
-      </div>
-      
-      <div class="sidebar-footer">
-        <div id="userInfo" style="font-size: 12px; margin-bottom: 15px;">
-          <div id="adminName"></div>
-          <div id="adminLevel" style="color: #e26f0f;"></div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-link active" data-section="dashboard">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-link" data-section="users">
+          <span class="nav-icon">👥</span>
+          <span>Users</span>
+        </button>
+        <button class="nav-link" data-section="leagues">
+          <span class="nav-icon">🏆</span>
+          <span>Leagues</span>
+        </button>
+        <button class="nav-link" data-section="admin-manage">
+          <span class="nav-icon">⚙️</span>
+          <span>Admins</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-user">
+        <div class="user-avatar"></div>
+        <div class="user-info">
+          <p class="user-name" id="sidebarUserName">Admin</p>
+          <p class="user-level" id="sidebarUserLevel">Super Admin</p>
         </div>
-        <button class="logout-btn" id="logoutBtn">Logout</button>
       </div>
-    </div>
-    
-    <div class="main-content">
-      <div class="header">
-        <div>
-          <span id="pageTitle">Dashboard</span>
-          <span class="admin-level-badge" id="levelBadge"></span>
+
+      <button class="sidebar-logout" id="sidebarLogout">Logout</button>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1 id="pageTitle">Dashboard</h1>
+          <p class="breadcrumb"><span id="adminLevel"></span></p>
         </div>
-        <div class="header-user">
+        <div class="header-right">
           <span id="headerUserName"></span>
-          <button id="headerLogout" class="header-logout-btn">Logout</button>
+          <button class="header-logout" id="headerLogout">Logout</button>
         </div>
-      </div>
-      
-      <div id="dashboard" class="section active">
-        <div class="welcome-card">
-          <div class="welcome-card-content">
-            <div>
-              <h2 id="welcomeMsg">Welcome</h2>
-              <p>Super League FF Admin Portal</p>
-            </div>
-            <img src="./assets/images/Super-League-Banner.png" alt="Super League Banner" class="welcome-banner">
+      </header>
+
+      <section id="dashboard" class="admin-section active">
+        <div class="dashboard-hero">
+          <div class="hero-content">
+            <h2 id="welcomeMsg">Welcome back</h2>
+            <p>Super League FF Admin Portal</p>
           </div>
+          <img src="./assets/images/Super-League-Banner.png" alt="Super League" class="hero-image">
         </div>
-        
-        <div class="access-info">
-          <strong>Protected Admin Area</strong><br>
-          <span id="accessLevels"></span><br>
-          Your level: <strong id="yourLevel"></strong>
+
+        <div class="access-card">
+          <p><strong>Access Level:</strong> <span id="yourLevel"></span></p>
+          <p><strong>Authorized Levels:</strong> 1, 4, 7, 9</p>
         </div>
-        
-        <div class="grid" id="dashboardCards"></div>
-      </div>
-      
-      <div id="slff" class="section">
-        <h2 style="margin-bottom: 20px;">SLFF Management</h2>
-        <div id="slffContent"></div>
-      </div>
-    </div>
+
+        <div class="dashboard-grid" id="dashboardCards"></div>
+      </section>
+
+      <section id="users" class="admin-section">
+        <div class="section-header">
+          <h2>User Management</h2>
+          <p>View and manage all user profiles</p>
+        </div>
+        <div id="usersContent"></div>
+      </section>
+
+      <section id="leagues" class="admin-section">
+        <div class="section-header">
+          <h2>League Management</h2>
+          <p>Manage leagues and assignments</p>
+        </div>
+        <div id="leaguesContent"></div>
+      </section>
+
+      <section id="admin-manage" class="admin-section">
+        <div class="section-header">
+          <h2>Admin Management</h2>
+          <p>Adjust admin levels and permissions</p>
+        </div>
+        <div id="adminContent"></div>
+      </section>
+    </main>
   </div>
 
   <script src="./js/auth.js"></script>
