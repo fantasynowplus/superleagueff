@@ -268,7 +268,7 @@ function showUserDetailModal(user) {
       <div class="profile-grid">
         <div class="profile-item">
           <label>Full Name</label>
-          <p>${user.name || '-'}</p>
+          <p data-field="name">${user.name || '-'}</p>
         </div>
         <div class="profile-item">
           <label>Email</label>
@@ -276,50 +276,50 @@ function showUserDetailModal(user) {
         </div>
         <div class="profile-item">
           <label>Cell Phone</label>
-          <p>${user.cell_phone || '-'}</p>
+          <p data-field="cell_phone">${user.cell_phone || '-'}</p>
         </div>
         <div class="profile-item">
           <label>Location</label>
-          <p>${user.location || '-'}</p>
+          <p data-field="location">${user.location || '-'}</p>
         </div>
         
         <div class="profile-item">
           <label>X (Twitter)</label>
-          <p>${user.x_handle || '-'}</p>
+          <p data-field="x_handle">${user.x_handle || '-'}</p>
         </div>
         <div class="profile-item">
           <label>Bluesky</label>
-          <p>${user.bluesky_handle || '-'}</p>
+          <p data-field="bluesky_handle">${user.bluesky_handle || '-'}</p>
         </div>
         <div class="profile-item">
           <label>Discord</label>
-          <p>${user.discord_handle || '-'}</p>
+          <p data-field="discord_handle">${user.discord_handle || '-'}</p>
         </div>
         <div class="profile-item">
           <label>Sleeper Handle</label>
-          <p>${user.sleeper_handle || '-'}</p>
+          <p data-field="sleeper_handle">${user.sleeper_handle || '-'}</p>
         </div>
         
         <div class="profile-item">
           <label>MFL Handle</label>
-          <p>${user.mfl_handle || '-'}</p>
+          <p data-field="mfl_handle">${user.mfl_handle || '-'}</p>
         </div>
         <div class="profile-item">
           <label>Assigned League</label>
-          <p>${user.assigned_league || '-'}</p>
+          <p data-field="assigned_league">${user.assigned_league || '-'}</p>
         </div>
         <div class="profile-item">
           <label>Draft Spot</label>
-          <p>${user.draft_spot || '-'}</p>
+          <p data-field="draft_spot">${user.draft_spot || '-'}</p>
         </div>
         <div class="profile-item">
           <label>Verified</label>
-          <p>${user.is_verified ? '✓ Yes' : '✗ No'}</p>
+          <p data-field="is_verified">${user.is_verified ? '✓ Yes' : '✗ No'}</p>
         </div>
         
         <div class="profile-item">
           <label>Admin Level</label>
-          <p>${user.admin_level || 0}</p>
+          <p data-field="admin_level">${user.admin_level || 0}</p>
         </div>
         <div class="profile-item">
           <label>Created</label>
@@ -339,7 +339,145 @@ function showUserDetailModal(user) {
 }
 
 function editUserProfile(userId) {
-  alert('Edit functionality coming soon');
+  const modal = document.querySelector('.user-detail-modal');
+  const profileGrid = modal.querySelector('.profile-grid');
+  
+  const allFields = {
+    name: 'Full Name',
+    cell_phone: 'Cell Phone',
+    location: 'Location',
+    x_handle: 'X (Twitter)',
+    bluesky_handle: 'Bluesky',
+    discord_handle: 'Discord',
+    sleeper_handle: 'Sleeper Handle',
+    mfl_handle: 'MFL Handle',
+    assigned_league: 'Assigned League',
+    draft_spot: 'Draft Spot',
+    admin_level: 'Admin Level',
+    is_verified: 'Verified'
+  };
+
+  const user = {};
+  modal.querySelectorAll('[data-field]').forEach(el => {
+    const field = el.getAttribute('data-field');
+    if (field === 'is_verified') {
+      user[field] = el.textContent.includes('Yes');
+    } else if (field === 'admin_level' || field === 'draft_spot') {
+      user[field] = parseInt(el.textContent) || 0;
+    } else {
+      user[field] = el.textContent === '-' ? '' : el.textContent;
+    }
+  });
+
+  let editHTML = '<div class="edit-form">';
+  
+  Object.entries(allFields).forEach(([field, label]) => {
+    if (field === 'is_verified') {
+      editHTML += `
+        <div class="form-group">
+          <label for="edit-${field}">${label}</label>
+          <select id="edit-${field}">
+            <option value="false" ${!user[field] ? 'selected' : ''}>No</option>
+            <option value="true" ${user[field] ? 'selected' : ''}>Yes</option>
+          </select>
+        </div>
+      `;
+    } else if (field === 'admin_level' || field === 'draft_spot') {
+      editHTML += `
+        <div class="form-group">
+          <label for="edit-${field}">${label}</label>
+          <input type="number" id="edit-${field}" value="${user[field] || 0}">
+        </div>
+      `;
+    } else {
+      editHTML += `
+        <div class="form-group">
+          <label for="edit-${field}">${label}</label>
+          <input type="text" id="edit-${field}" value="${user[field] || ''}">
+        </div>
+      `;
+    }
+  });
+
+  editHTML += `
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <button class="modal-button" onclick="saveUserChanges('${userId}')">Save Changes</button>
+      <button class="modal-button" style="background: #666;" onclick="cancelEdit()">Cancel</button>
+    </div>
+    <div id="edit-message"></div>
+  </div>`;
+
+  profileGrid.innerHTML = editHTML;
+  modal.querySelector('.modal-button').style.display = 'none';
+}
+
+async function saveUserChanges(userId) {
+  const adminLevel = currentProfile.admin_level || 0;
+  
+  if (adminLevel < 7) {
+    alert('You do not have permission to edit users.');
+    return;
+  }
+
+  const updates = {};
+  const fields = ['name', 'cell_phone', 'location', 'x_handle', 'bluesky_handle', 'discord_handle', 'sleeper_handle', 'mfl_handle', 'assigned_league', 'draft_spot', 'admin_level', 'is_verified'];
+
+  fields.forEach(field => {
+    const input = document.getElementById(`edit-${field}`);
+    if (input) {
+      if (field === 'is_verified') {
+        updates[field] = input.value === 'true';
+      } else if (field === 'admin_level' || field === 'draft_spot') {
+        updates[field] = parseInt(input.value) || null;
+      } else {
+        updates[field] = input.value || null;
+      }
+    }
+  });
+
+  const button = event.target;
+  button.disabled = true;
+  button.style.opacity = '0.6';
+
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({ ...updates, updated_at: new Date().toISOString() })
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(`Failed to update profile: ${error}`);
+    }
+
+    const messageEl = document.getElementById('edit-message');
+    messageEl.textContent = 'Changes saved successfully!';
+    messageEl.style.color = '#16a34a';
+    messageEl.style.marginTop = '10px';
+
+    setTimeout(() => {
+      document.querySelector('.user-detail-modal').remove();
+      loadAllUsers();
+    }, 1500);
+  } catch (err) {
+    button.disabled = false;
+    button.style.opacity = '1';
+    const messageEl = document.getElementById('edit-message');
+    messageEl.textContent = 'Error: ' + err.message;
+    messageEl.style.color = '#dc2626';
+    messageEl.style.marginTop = '10px';
+  }
+}
+
+function cancelEdit() {
+  document.querySelector('.user-detail-modal').remove();
 }
 
 async function loadLeagues() {
