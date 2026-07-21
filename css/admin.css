@@ -739,3 +739,21 @@
     grid-template-columns: 1fr;
   }
 }
+
+.modal-actions {
+  margin-top: 30px;
+  display: flex;
+  gap: 10px;
+}
+
+.modal-actions .modal-button {
+  flex: 1;
+}
+
+.modal-actions .cancel-btn {
+  background: #666;
+}
+
+.modal-actions .cancel-btn:hover {
+  background: #555;
+}
