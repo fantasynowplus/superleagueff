@@ -132,10 +132,21 @@
 </footer>
 
 <script src="js/main.js"></script>
-  <script>
+  
+<script>
+  console.log('Current URL:', window.location.href);
+  console.log('Hash:', window.location.hash);
+  
   if (window.location.hash) {
     const params = new URLSearchParams(window.location.hash.slice(1));
-    if (params.get('type') === 'recovery') {
+    console.log('Hash params:', {
+      type: params.get('type'),
+      access_token: params.get('access_token') ? 'exists' : 'missing',
+      error: params.get('error')
+    });
+    
+    if (params.get('type') === 'recovery' || params.get('access_token')) {
+      console.log('Redirecting to reset-password.html');
       window.location.href = './reset-password.html' + window.location.hash;
     }
   }
