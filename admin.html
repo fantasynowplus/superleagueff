@@ -32,12 +32,9 @@
 
   <script src="./js/auth.js"></script>
   <script>
-    const loginForm = document.getElementById('login-form');
-    const loginError = document.getElementById('error');
-
-    async function checkAdminAccess() {
+    async function handleAdminAccess() {
       if (!auth.isAuthenticated()) {
-        return false;
+        return;
       }
 
       let attempts = 0;
@@ -47,8 +44,16 @@
       }
 
       const adminLevel = auth.profile?.admin_level || 0;
-      return adminLevel >= 1;
+      
+      if (adminLevel >= 1) {
+        window.location.href = './admin-dashboard.html';
+      }
     }
+
+    handleAdminAccess();
+
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('error');
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -63,10 +68,16 @@
       try {
         await auth.login(email, password);
         
-        const hasAccess = await checkAdminAccess();
+        let attempts = 0;
+        while (!auth.profile && attempts < 50) {
+          await new Promise(r => setTimeout(r, 100));
+          attempts++;
+        }
+
+        const adminLevel = auth.profile?.admin_level || 0;
         
-        if (hasAccess) {
-          window.location.href = './admin.html';
+        if (adminLevel >= 1) {
+          window.location.href = './admin-dashboard.html';
         } else {
           loginError.textContent = 'You do not have admin access. Please login with an admin account.';
           loginError.classList.add('show');
