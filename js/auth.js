@@ -75,9 +75,9 @@ class AuthManager {
       localStorage.setItem('sb-auth-token', data.session.access_token);
       this.user = data.user;
       await this.updateProfile({ name });
-      return data.user;
+      return { success: true, requiresConfirmation: false };
     } else {
-      throw new Error('Check your email to confirm your account before logging in.');
+      return { success: true, requiresConfirmation: true };
     }
   }
 
