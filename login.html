@@ -177,42 +177,40 @@
       }
     });
 
-    signupForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('signup-name').value;
-      const email = document.getElementById('signup-email').value;
-      const password = document.getElementById('signup-password').value;
-      const button = signupForm.querySelector('button');
-      
-      signupError.classList.remove('show');
-      button.classList.add('loading');
+signupForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('signup-email').value;
+  const password = document.getElementById('signup-password').value;
+  const button = signupForm.querySelector('button');
+  
+  signupError.classList.remove('show');
+  button.classList.add('loading');
 
-      try {
-        const result = await auth.signup(email, password, name);
-        if (result.success) {
-          signupError.classList.remove('show');
-          signupError.style.background = '#dcfce7';
-          signupError.style.color = '#16a34a';
-          signupError.textContent = 'Account created! Please login.';
-          signupError.classList.add('show');
-          
-          setTimeout(() => {
-            document.getElementById('signup-name').value = '';
-            document.getElementById('signup-email').value = '';
-            document.getElementById('signup-password').value = '';
-            loginForm.style.display = 'block';
-            signupForm.style.display = 'none';
-            toggleText.innerHTML = "Don't have an account? <a id='toggle-btn'>Sign up</a>";
-            attachToggleListener();
-            signupError.classList.remove('show');
-          }, 2000);
-        }
-      } catch (err) {
-        signupError.textContent = err.message;
-        signupError.classList.add('show');
-        button.classList.remove('loading');
-      }
-    });
+  try {
+    const result = await auth.signup(email, password, '');
+    if (result.success) {
+      signupError.classList.remove('show');
+      signupError.style.background = '#dcfce7';
+      signupError.style.color = '#16a34a';
+      signupError.textContent = 'Account created! Please login.';
+      signupError.classList.add('show');
+      
+      setTimeout(() => {
+        document.getElementById('signup-email').value = '';
+        document.getElementById('signup-password').value = '';
+        loginForm.style.display = 'block';
+        signupForm.style.display = 'none';
+        toggleText.innerHTML = "Don't have an account? <a id='toggle-btn'>Sign up</a>";
+        attachToggleListener();
+        signupError.classList.remove('show');
+      }, 2000);
+    }
+  } catch (err) {
+    signupError.textContent = err.message;
+    signupError.classList.add('show');
+    button.classList.remove('loading');
+  }
+});
   </script>
 </body>
 </html>
