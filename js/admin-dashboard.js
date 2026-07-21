@@ -187,8 +187,8 @@ async function loadAllUsers() {
         </thead>
         <tbody>
           ${users.map(u => `
-            <tr>
-              <td>${u.name || '(not set)'}</td>
+            <tr onclick="viewUserProfile('${u.id}')">
+              <td><a class="user-link">${u.name || '(not set)'}</a></td>
               <td>${u.email}</td>
               <td>${u.sleeper_handle || '-'}</td>
               <td>${u.mfl_handle || '-'}</td>
@@ -205,6 +205,120 @@ async function loadAllUsers() {
     console.error('Error loading users:', err);
     document.getElementById('usersContent').innerHTML = `<div class="error">Error: ${err.message}</div>`;
   }
+}
+
+async function viewUserProfile(userId) {
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to load user profile');
+    }
+
+    const data = await res.json();
+    if (!data || data.length === 0) {
+      alert('User not found');
+      return;
+    }
+
+    const user = data[0];
+    showUserDetailModal(user);
+  } catch (err) {
+    alert('Error loading profile: ' + err.message);
+  }
+}
+
+function showUserDetailModal(user) {
+  const modal = document.createElement('div');
+  modal.className = 'user-detail-modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <button class="modal-close" onclick="this.closest('.user-detail-modal').remove()">✕</button>
+      
+      <h2>${user.name || 'User Profile'}</h2>
+      <p class="modal-subtitle">${user.email}</p>
+      
+      <div class="profile-grid">
+        <div class="profile-item">
+          <label>Email</label>
+          <p>${user.email}</p>
+        </div>
+        <div class="profile-item">
+          <label>Full Name</label>
+          <p>${user.name || '-'}</p>
+        </div>
+        <div class="profile-item">
+          <label>Cell Phone</label>
+          <p>${user.cell_phone || '-'}</p>
+        </div>
+        <div class="profile-item">
+          <label>Location</label>
+          <p>${user.location || '-'}</p>
+        </div>
+        
+        <div class="profile-section">Social Media</div>
+        
+        <div class="profile-item">
+          <label>X (Twitter)</label>
+          <p>${user.x_handle || '-'}</p>
+        </div>
+        <div class="profile-item">
+          <label>Bluesky</label>
+          <p>${user.bluesky_handle || '-'}</p>
+        </div>
+        <div class="profile-item">
+          <label>Discord</label>
+          <p>${user.discord_handle || '-'}</p>
+        </div>
+        
+        <div class="profile-section">Fantasy Football</div>
+        
+        <div class="profile-item">
+          <label>Sleeper Handle</label>
+          <p>${user.sleeper_handle || '-'}</p>
+        </div>
+        <div class="profile-item">
+          <label>MFL Handle</label>
+          <p>${user.mfl_handle || '-'}</p>
+        </div>
+        <div class="profile-item">
+          <label>Assigned League</label>
+          <p>${user.assigned_league || '-'}</p>
+        </div>
+        <div class="profile-item">
+          <label>Draft Spot</label>
+          <p>${user.draft_spot || '-'}</p>
+        </div>
+        
+        <div class="profile-section">Admin Settings</div>
+        
+        <div class="profile-item">
+          <label>Admin Level</label>
+          <p>${user.admin_level || 0}</p>
+        </div>
+        <div class="profile-item">
+          <label>Verified</label>
+          <p>${user.is_verified ? '✓ Yes' : '✗ No'}</p>
+        </div>
+        <div class="profile-item">
+          <label>Created</label>
+          <p>${new Date(user.created_at).toLocaleDateString()}</p>
+        </div>
+        <div class="profile-item">
+          <label>Last Updated</label>
+          <p>${new Date(user.updated_at).toLocaleDateString()}</p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
 }
 
 async function loadLeagues() {
