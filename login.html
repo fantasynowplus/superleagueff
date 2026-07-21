@@ -192,8 +192,25 @@
       button.classList.add('loading');
 
       try {
-        await auth.signup(email, password, name);
-        window.location.href = './profile.html';
+        const result = await auth.signup(email, password, name);
+        if (result.success) {
+          signupError.classList.remove('show');
+          signupError.style.background = '#dcfce7';
+          signupError.style.color = '#16a34a';
+          signupError.textContent = 'Account created! Please login.';
+          signupError.classList.add('show');
+          
+          setTimeout(() => {
+            document.getElementById('signup-name').value = '';
+            document.getElementById('signup-email').value = '';
+            document.getElementById('signup-password').value = '';
+            loginForm.style.display = 'block';
+            signupForm.style.display = 'none';
+            toggleText.innerHTML = "Don't have an account? <a id='toggle-btn'>Sign up</a>";
+            attachToggleListener();
+            signupError.classList.remove('show');
+          }, 2000);
+        }
       } catch (err) {
         signupError.textContent = err.message;
         signupError.classList.add('show');
