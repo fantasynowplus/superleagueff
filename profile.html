@@ -15,32 +15,35 @@
       background: #f9f7f4;
     }
     .profile-header {
-  margin-bottom: 30px;
-}
-.profile-container h1 {
-  color: #06192b;
-  margin: 0;
-  display: inline;
-}
-.user-email {
-  color: #666;
-  font-size: 14px;
-  margin-top: 10px;
-  display: block;
-}
-.edit-btn {
-  background: none;
-  color: #e26f0f;
-  border: none;
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: inherit;
-  text-decoration: none;
-  display: inline;
-  margin-left: 15px;
-}
+      margin-bottom: 30px;
+    }
+    .profile-container h1 {
+      color: #06192b;
+      margin: 0;
+      display: inline;
+    }
+    .user-email {
+      color: #666;
+      font-size: 14px;
+      margin-top: 10px;
+      display: block;
+    }
+    .edit-btn {
+      background: none;
+      color: #e26f0f;
+      border: none;
+      padding: 0;
+      margin: 0;
+      margin-left: 15px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: inherit;
+      text-decoration: none;
+      display: inline;
+    }
+    .edit-btn:hover {
+      color: #c95d0a;
+    }
     .form-group {
       margin-bottom: 20px;
     }
@@ -69,13 +72,13 @@
       font-family: inherit;
       display: none;
     }
+    input.edit-mode {
+      display: block;
+    }
     input:focus {
       outline: none;
       border-color: #e26f0f;
       box-shadow: 0 0 0 2px rgba(226, 111, 15, 0.1);
-    }
-    input.edit-mode {
-      display: block;
     }
     .form-section {
       margin-top: 30px;
@@ -92,6 +95,10 @@
       display: flex;
       gap: 10px;
       margin-top: 30px;
+      display: none;
+    }
+    .button-group.show {
+      display: flex;
     }
     button {
       flex: 1;
@@ -108,20 +115,19 @@
     button:hover {
       background: #c95d0a;
     }
-    button:active {
-      background: #a84708;
-    }
-    .logout-btn {
-      background: #06192b;
-    }
-    .logout-btn:hover {
-      background: #000;
-    }
     .cancel-btn {
       background: #999;
     }
     .cancel-btn:hover {
       background: #777;
+    }
+    .logout-btn {
+      background: #06192b;
+      width: 100%;
+      margin-top: 20px;
+    }
+    .logout-btn:hover {
+      background: #000;
     }
     .success {
       color: #16a34a;
@@ -145,37 +151,31 @@
     .error.show {
       display: block;
     }
-    .loading {
-      opacity: 0.6;
-      pointer-events: none;
-    }
   </style>
 </head>
 <body>
   <div class="profile-container">
-    <div>
-      <div class="profile-header">
-        <h1>My Profile</h1>
-        <button class="edit-btn" id="edit-btn">Edit</button>
-      </div>
+    <div class="profile-header">
+      <h1>My Profile</h1>
+      <button class="edit-btn" id="edit-btn">Edit</button>
       <p class="user-email" id="user-email"></p>
     </div>
 
     <form id="profile-form">
       <div class="form-group">
-        <label for="name">Full Name</label>
+        <label>Full Name</label>
         <div class="view-mode" id="name-view"></div>
         <input type="text" id="name">
       </div>
 
       <div class="form-group">
-        <label for="cell_phone">Cell Phone</label>
+        <label>Cell Phone</label>
         <div class="view-mode" id="cell_phone-view"></div>
         <input type="tel" id="cell_phone">
       </div>
 
       <div class="form-group">
-        <label for="location">Location</label>
+        <label>Location</label>
         <div class="view-mode" id="location-view"></div>
         <input type="text" id="location">
       </div>
@@ -183,17 +183,17 @@
       <div class="form-section">
         <h3>Social Media</h3>
         <div class="form-group">
-          <label for="x_handle">X (Twitter)</label>
+          <label>X (Twitter)</label>
           <div class="view-mode" id="x_handle-view"></div>
           <input type="text" id="x_handle" placeholder="@username">
         </div>
         <div class="form-group">
-          <label for="bluesky_handle">Bluesky</label>
+          <label>Bluesky</label>
           <div class="view-mode" id="bluesky_handle-view"></div>
           <input type="text" id="bluesky_handle" placeholder="username.bsky.social">
         </div>
         <div class="form-group">
-          <label for="discord_handle">Discord</label>
+          <label>Discord</label>
           <div class="view-mode" id="discord_handle-view"></div>
           <input type="text" id="discord_handle" placeholder="username#0000">
         </div>
@@ -202,12 +202,12 @@
       <div class="form-section">
         <h3>Fantasy Football</h3>
         <div class="form-group">
-          <label for="sleeper_handle">Sleeper Handle</label>
+          <label>Sleeper Handle</label>
           <div class="view-mode" id="sleeper_handle-view"></div>
           <input type="text" id="sleeper_handle">
         </div>
         <div class="form-group">
-          <label for="mfl_handle">MFL Handle</label>
+          <label>MFL Handle</label>
           <div class="view-mode" id="mfl_handle-view"></div>
           <input type="text" id="mfl_handle">
         </div>
@@ -216,8 +216,8 @@
       <div id="message" class="success"></div>
       <div id="error" class="error"></div>
 
-      <div class="button-group" id="button-group" style="display: none;">
-        <button type="submit" id="save-btn">Save Changes</button>
+      <div class="button-group" id="button-group">
+        <button type="submit">Save Changes</button>
         <button type="button" id="cancel-btn" class="cancel-btn">Cancel</button>
       </div>
     </form>
@@ -234,7 +234,6 @@
     const cancelBtn = document.getElementById('cancel-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const buttonGroup = document.getElementById('button-group');
-    const saveBtn = document.getElementById('save-btn');
 
     const fields = ['name', 'cell_phone', 'location', 'x_handle', 'bluesky_handle', 'discord_handle', 'sleeper_handle', 'mfl_handle'];
 
@@ -242,16 +241,18 @@
       fields.forEach(field => {
         const input = document.getElementById(field);
         const view = document.getElementById(`${field}-view`);
-        if (isEditing) {
-          view.style.display = 'none';
-          input.classList.add('edit-mode');
-        } else {
-          view.style.display = 'block';
-          input.classList.remove('edit-mode');
+        if (input && view) {
+          if (isEditing) {
+            view.style.display = 'none';
+            input.classList.add('edit-mode');
+          } else {
+            view.style.display = 'block';
+            input.classList.remove('edit-mode');
+          }
         }
       });
-      editBtn.style.display = isEditing ? 'none' : 'block';
-      buttonGroup.style.display = isEditing ? 'flex' : 'none';
+      editBtn.style.display = isEditing ? 'none' : 'inline';
+      buttonGroup.classList.toggle('show', isEditing);
     }
 
     async function loadProfile() {
@@ -267,9 +268,11 @@
       fields.forEach(field => {
         const input = document.getElementById(field);
         const view = document.getElementById(`${field}-view`);
-        const value = profile[field] || '';
-        input.value = value;
-        view.textContent = value || '(not set)';
+        if (input && view) {
+          const value = profile[field] || '';
+          input.value = value;
+          view.textContent = value || '(not set)';
+        }
       });
     }
 
@@ -286,7 +289,6 @@
       e.preventDefault();
       errorEl.classList.remove('show');
       messageEl.classList.remove('show');
-      saveBtn.classList.add('loading');
 
       try {
         await auth.updateProfile({
@@ -301,7 +303,6 @@
         });
         messageEl.textContent = 'Profile saved!';
         messageEl.classList.add('show');
-        saveBtn.classList.remove('loading');
         setTimeout(() => {
           toggleEditMode(false);
           loadProfile();
@@ -309,7 +310,6 @@
       } catch (err) {
         errorEl.textContent = err.message;
         errorEl.classList.add('show');
-        saveBtn.classList.remove('loading');
       }
     });
 
