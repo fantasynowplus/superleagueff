@@ -1,5 +1,6 @@
 let currentUser = null;
 let currentProfile = null;
+let divisionsFilter = 'all';
 
 async function initAdmin() {
   if (!auth.isAuthenticated()) {
@@ -521,7 +522,7 @@ async function loadLeagues() {
           </select>
         </div>
         
-        <div class="leagues-container" id="leaguesContainer">
+        <div class="divisions-view" id="divisionsView">
         </div>
       `;
     }
@@ -531,7 +532,7 @@ async function loadLeagues() {
     if (leagues && leagues.length > 0) {
       const activeLeague = leagues.find(l => l.is_active) || leagues[0];
       window.allLeagues = leagues;
-      await displayLeague(activeLeague.id);
+      await displayLeagueDivisions(activeLeague.id, activeLeague.league_name);
     }
   } catch (err) {
     console.error('Error loading leagues:', err);
@@ -540,52 +541,13 @@ async function loadLeagues() {
 }
 
 async function filterLeagueDisplay(leagueId) {
-  await displayLeague(leagueId);
-}
-
-async function displayLeague(leagueId) {
   const league = window.allLeagues.find(l => l.id === leagueId);
-  const adminLevel = currentProfile.admin_level || 0;
-  
-  if (!league) return;
-
-  let html = `
-    <div class="league-card full-width">
-      <div class="league-header">
-        <div>
-          <h3>${league.league_name}</h3>
-          <p class="league-year">Year: ${league.year}</p>
-        </div>
-        <div class="league-status">
-          ${league.is_active ? '<span class="badge active">Active</span>' : '<span class="badge">Inactive</span>'}
-        </div>
-      </div>
-      
-      <div class="league-actions">
-        ${adminLevel >= 7 ? `
-          ${!league.is_active && adminLevel >= 7 ? `<button class="btn-small" onclick="setActiveLeague('${league.id}')">Set Active</button>` : ''}
-          ${league.is_active && adminLevel >= 7 ? `<button class="btn-small" onclick="deactivateLeague('${league.id}')">Deactivate</button>` : ''}
-          ${adminLevel === 9 ? `<button class="btn-small danger" onclick="deleteLeague('${league.id}')">Delete</button>` : ''}
-        ` : ''}
-      </div>
-
-      <div class="divisions-section">
-        <div class="divisions-header">
-          <h4>Divisions</h4>
-          ${adminLevel >= 7 ? `<button class="btn-small" onclick="showCreateDivisionModal('${league.id}')">+ Add Division</button>` : ''}
-        </div>
-        <div id="divisions-${league.id}"></div>
-      </div>
-    </div>
-  `;
-
-  document.getElementById('leaguesContainer').innerHTML = html;
-  await loadDivisions(league.id);
+  if (league) {
+    await displayLeagueDivisions(leagueId, league.league_name);
+  }
 }
 
-async function loadDivisions(leagueId) {
-  const adminLevel = currentProfile.admin_level || 0;
-  
+async function displayLeagueDivisions(leagueId, leagueName) {
   try {
     const token = localStorage.getItem('sb-auth-token');
     
@@ -599,107 +561,80 @@ async function loadDivisions(leagueId) {
     if (!res.ok) throw new Error('Failed to load divisions');
 
     const divisions = await res.json();
-    let html = '';
-
-    if (!divisions || divisions.length === 0) {
-      html = '<p class="empty">No divisions yet</p>';
-    } else {
-      html = '<div class="divisions-list">';
-      
-      for (const division of divisions) {
-        html += `
-          <div class="division-card">
-            <div class="division-header">
-              <h5>${division.division_name}</h5>
-              <span class="badge ${division.is_active ? 'active' : ''}">
-                ${division.is_active ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-            
-            ${adminLevel >= 7 ? `
-              <div class="division-actions">
-                ${!division.is_active && adminLevel >= 7 ? `<button class="btn-tiny" onclick="activateDivision('${division.id}')">Activate</button>` : ''}
-                ${division.is_active && adminLevel >= 7 ? `<button class="btn-tiny" onclick="deactivateDivision('${division.id}')">Deactivate</button>` : ''}
-                ${adminLevel === 9 ? `<button class="btn-tiny danger" onclick="deleteDivision('${division.id}')">Delete</button>` : ''}
-              </div>
-            ` : ''}
-            
-            <div class="draft-grid">
-              ${Array.from({length: 12}, (_, i) => i + 1).map(spot => `
-                <div class="draft-spot" id="spot-${division.id}-${spot}">
-                  <div class="spot-number">#${spot}</div>
-                  <div class="spot-member">Loading...</div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-      }
-      
-      html += '</div>';
-    }
-
-    document.getElementById(`divisions-${leagueId}`).innerHTML = html;
     
-    for (const division of divisions) {
-      await loadDivisionMembers(division.id);
-    }
+    let html = `
+      <div class="divisions-header">
+        <h2>${leagueName} Divisions</h2>
+        <p>${divisions.length} divisions</p>
+      </div>
+      
+      <div class="division-filters">
+        <button class="filter-btn ${divisionsFilter === 'all' ? 'active' : ''}" onclick="applyDivisionsFilter('all')">All Divisions</button>
+        <button class="filter-btn ${divisionsFilter === 'active' ? 'active' : ''}" onclick="applyDivisionsFilter('active')">Active</button>
+        <button class="filter-btn ${divisionsFilter === 'inactive' ? 'active' : ''}" onclick="applyDivisionsFilter('inactive')">Not Active</button>
+        <button class="filter-btn ${divisionsFilter === 'sleeper' ? 'active' : ''}" onclick="applyDivisionsFilter('sleeper')">Sleeper</button>
+        <button class="filter-btn ${divisionsFilter === 'mfl' ? 'active' : ''}" onclick="applyDivisionsFilter('mfl')">MFL</button>
+        <button class="filter-btn ${divisionsFilter === 'full' ? 'active' : ''}" onclick="applyDivisionsFilter('full')">League Full</button>
+      </div>
+      
+      <div class="divisions-table-wrapper">
+        <table class="divisions-table">
+          <thead>
+            <tr>
+              <th>Division Name</th>
+              <th>MFLID</th>
+              <th>SLEEPER ID</th>
+              <th>Draftboard</th>
+              <th>Active</th>
+              <th>Host</th>
+              <th>Entrants</th>
+              <th>Logged In</th>
+              <th>Stage</th>
+              <th>Invite Link</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${divisions.map(d => `
+              <tr onclick="viewDivisionDetails('${d.id}')">
+                <td><strong>${d.division_name}</strong></td>
+                <td>${d.mfl_id || '-'}</td>
+                <td>${d.sleeper_id || '-'}</td>
+                <td>${d.draftboard_url ? `<a href="${d.draftboard_url}" target="_blank">View</a>` : '-'}</td>
+                <td><span class="badge ${d.is_active ? 'active' : 'inactive'}">${d.is_active ? 'Active' : 'Inactive'}</span></td>
+                <td>${d.host_id ? 'Set' : 'Not Set'}</td>
+                <td>-</td>
+                <td>-</td>
+                <td>Stage ${d.league_stage || 0}</td>
+                <td>${d.invite_link ? `<a href="${d.invite_link}" target="_blank">Join</a>` : '-'}</td>
+                <td><button class="btn-action" onclick="event.stopPropagation(); editDivision('${d.id}')">Edit</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    
+    document.getElementById('divisionsView').innerHTML = html;
   } catch (err) {
     console.error('Error loading divisions:', err);
-    document.getElementById(`divisions-${leagueId}`).innerHTML = `<div class="error">Error: ${err.message}</div>`;
+    document.getElementById('divisionsView').innerHTML = `<div class="error">Error: ${err.message}</div>`;
   }
 }
 
-async function loadDivisionMembers(divisionId) {
-  const adminLevel = currentProfile.admin_level || 0;
-  
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members?division_id=eq.${divisionId}&order=draft_spot.asc`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      }
-    });
+function applyDivisionsFilter(filter) {
+  divisionsFilter = filter;
+  const buttons = document.querySelectorAll('.filter-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+}
 
-    if (!res.ok) throw new Error('Failed to load members');
+function viewDivisionDetails(divisionId) {
+  console.log('View division:', divisionId);
+}
 
-    const members = await res.json();
-    
-    for (let spot = 1; spot <= 12; spot++) {
-      const member = members.find(m => m.draft_spot === spot);
-      const spotElement = document.getElementById(`spot-${divisionId}-${spot}`);
-      
-      if (spotElement) {
-        if (member) {
-          const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${member.user_id}`, {
-            headers: {
-              'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${token}`,
-            }
-          });
-          
-          const profile = await profileRes.json();
-          const name = profile[0]?.name || 'Unknown';
-          
-          spotElement.innerHTML = `
-            <div class="spot-number">#${spot}</div>
-            <div class="spot-member">${name}</div>
-            ${adminLevel >= 4 ? `<button class="btn-spot" onclick="removeMember('${member.id}', '${divisionId}')">Remove</button>` : ''}
-          `;
-        } else {
-          spotElement.innerHTML = `
-            <div class="spot-number">#${spot}</div>
-            <div class="spot-member">Empty</div>
-            ${adminLevel >= 4 ? `<button class="btn-spot" onclick="showAssignMemberModal('${divisionId}', ${spot})">Assign</button>` : ''}
-          `;
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Error loading division members:', err);
-  }
+function editDivision(divisionId) {
+  alert('Division editing coming soon');
 }
 
 function showCreateLeagueModal() {
@@ -761,311 +696,6 @@ async function saveNewLeague() {
   } catch (err) {
     document.getElementById('createLeagueMessage').innerHTML = `<div class="error">${err.message}</div>`;
   }
-}
-
-function showCreateDivisionModal(leagueId) {
-  const modal = document.createElement('div');
-  modal.className = 'modal';
-  modal.innerHTML = `
-    <div class="modal-content">
-      <button class="modal-close" onclick="this.closest('.modal').remove()">✕</button>
-      <h3>Create Division</h3>
-      
-      <div class="form-group">
-        <label for="divisionName">Division Name</label>
-        <input type="text" id="divisionName" placeholder="e.g., Division A">
-      </div>
-      
-      <button class="modal-button" onclick="saveNewDivision('${leagueId}')">Create Division</button>
-      <div id="createDivisionMessage"></div>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-}
-
-async function saveNewDivision(leagueId) {
-  const name = document.getElementById('divisionName').value.trim();
-  
-  if (!name) {
-    alert('Please enter a division name');
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/divisions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        league_id: leagueId,
-        division_name: name,
-        is_active: false
-      })
-    });
-
-    if (!res.ok) throw new Error('Failed to create division');
-
-    document.querySelector('.modal').remove();
-    loadLeagues();
-  } catch (err) {
-    document.getElementById('createDivisionMessage').innerHTML = `<div class="error">${err.message}</div>`;
-  }
-}
-
-function showAssignMemberModal(divisionId, draftSpot) {
-  const modal = document.createElement('div');
-  modal.className = 'modal';
-  modal.innerHTML = `
-    <div class="modal-content">
-      <button class="modal-close" onclick="this.closest('.modal').remove()">✕</button>
-      <h3>Assign to Draft Spot #${draftSpot}</h3>
-      
-      <div class="form-group">
-        <label for="memberSelect">Select User</label>
-        <select id="memberSelect"></select>
-      </div>
-      
-      <button class="modal-button" onclick="saveAssignMember('${divisionId}', ${draftSpot})">Assign</button>
-      <div id="assignMessage"></div>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-  loadUnassignedUsers(divisionId);
-}
-
-async function loadUnassignedUsers(divisionId) {
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      }
-    });
-
-    if (!res.ok) throw new Error('Failed to load users');
-
-    const users = await res.json();
-    const select = document.getElementById('memberSelect');
-    
-    select.innerHTML = users.map(u => `<option value="${u.id}">${u.name || u.email}</option>`).join('');
-  } catch (err) {
-    console.error('Error loading users:', err);
-  }
-}
-
-async function saveAssignMember(divisionId, draftSpot) {
-  const userId = document.getElementById('memberSelect').value;
-  
-  if (!userId) {
-    alert('Please select a user');
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        division_id: divisionId,
-        user_id: userId,
-        draft_spot: draftSpot
-      })
-    });
-
-    if (!res.ok) throw new Error('Failed to assign member');
-
-    document.querySelector('.modal').remove();
-    loadLeagues();
-  } catch (err) {
-    document.getElementById('assignMessage').innerHTML = `<div class="error">${err.message}</div>`;
-  }
-}
-
-async function removeMember(memberId, divisionId) {
-  if (!confirm('Remove this member?')) return;
-
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members?id=eq.${memberId}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      }
-    });
-
-    if (!res.ok) throw new Error('Failed to remove member');
-
-    loadLeagues();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function setActiveLeague(leagueId) {
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    await fetch(`${SUPABASE_URL}/rest/v1/leagues`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ is_active: false })
-    });
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/leagues?id=eq.${leagueId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ is_active: true })
-    });
-
-    if (!res.ok) throw new Error('Failed to set active league');
-
-    loadLeagues();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function deactivateLeague(leagueId) {
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/leagues?id=eq.${leagueId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ is_active: false })
-    });
-
-    if (!res.ok) throw new Error('Failed to deactivate league');
-
-    loadLeagues();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function deleteLeague(leagueId) {
-  if (!confirm('Delete this league and all its divisions? This cannot be undone!')) return;
-
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/leagues?id=eq.${leagueId}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      }
-    });
-
-    if (!res.ok) throw new Error('Failed to delete league');
-
-    loadLeagues();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function activateDivision(divisionId) {
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ is_active: true })
-    });
-
-    if (!res.ok) throw new Error('Failed to activate division');
-
-    loadLeagues();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function deactivateDivision(divisionId) {
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ is_active: false })
-    });
-
-    if (!res.ok) throw new Error('Failed to deactivate division');
-
-    loadLeagues();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function deleteDivision(divisionId) {
-  if (!confirm('Delete this division and all its members? This cannot be undone!')) return;
-
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      }
-    });
-
-    if (!res.ok) throw new Error('Failed to delete division');
-
-    loadLeagues();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-function editLeague(leagueId) {
-  alert('League editing coming soon');
-}
-
-function editDivision(divisionId, leagueId) {
-  alert('Division editing coming soon');
 }
 
 async function loadAdminManagement() {
