@@ -884,31 +884,54 @@ async function searchUsers(query) {
 
   try {
     const token = localStorage.getItem('sb-auth-token');
-    
     const searchTerm = `%${query}%`;
     
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?name.ilike.${searchTerm}&limit=20`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      }
-    });
-
-    if (!res.ok) throw new Error('Failed to search users');
-
-    let users = await res.json();
+    const nameUrl = `${SUPABASE_URL}/rest/v1/profiles?name=ilike.${encodeURIComponent(searchTerm)}&select=id,name,email&limit=50`;
+    const emailUrl = `${SUPABASE_URL}/rest/v1/profiles?email=ilike.${encodeURIComponent(searchTerm)}&select=id,name,email&limit=50`;
     
-    const emailRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?email.ilike.${searchTerm}&limit=20`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      }
-    });
+    let users = [];
+    const userMap = new Map();
+    
+    try {
+      const nameRes = await fetch(nameUrl, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${token}`,
+        }
+      });
 
-    if (emailRes.ok) {
-      const emailUsers = await emailRes.json();
-      const userIds = new Set(users.map(u => u.id));
-      users = [...users, ...emailUsers.filter(u => !userIds.has(u.id))];
+      if (nameRes.ok) {
+        const nameUsers = await nameRes.json();
+        nameUsers.forEach(u => {
+          if (!userMap.has(u.id)) {
+            userMap.set(u.id, u);
+            users.push(u);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Name search error:', err);
+    }
+    
+    try {
+      const emailRes = await fetch(emailUrl, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+
+      if (emailRes.ok) {
+        const emailUsers = await emailRes.json();
+        emailUsers.forEach(u => {
+          if (!userMap.has(u.id)) {
+            userMap.set(u.id, u);
+            users.push(u);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Email search error:', err);
     }
     
     let html = '<div class="user-list">';
@@ -930,7 +953,7 @@ async function searchUsers(query) {
     document.getElementById('user-search-results').innerHTML = html;
   } catch (err) {
     console.error('Search error:', err);
-    document.getElementById('user-search-results').innerHTML = `<div class="error">Error searching users</div>`;
+    document.getElementById('user-search-results').innerHTML = `<div class="error">Error searching users: ${err.message}</div>`;
   }
 }
 
