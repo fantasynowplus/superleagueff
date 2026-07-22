@@ -511,53 +511,76 @@ async function loadLeagues() {
     if (!leagues || leagues.length === 0) {
       html += '<div class="empty-state">No leagues found</div>';
     } else {
-      html += '<div class="leagues-container">';
+      const activeLeague = leagues.find(l => l.is_active) || leagues[0];
       
-      for (const league of leagues) {
-        html += `
-          <div class="league-card">
-            <div class="league-header">
-              <div>
-                <h3>${league.league_name}</h3>
-                <p class="league-year">Year: ${league.year}</p>
-              </div>
-              <div class="league-status">
-                ${league.is_active ? '<span class="badge active">Active</span>' : '<span class="badge">Inactive</span>'}
-              </div>
-            </div>
-            
-            <div class="league-actions">
-              ${adminLevel >= 7 ? `
-                <button class="btn-small" onclick="editLeague('${league.id}')">Edit</button>
-                ${!league.is_active && adminLevel >= 7 ? `<button class="btn-small" onclick="setActiveLeague('${league.id}')">Set Active</button>` : ''}
-                ${league.is_active && adminLevel >= 7 ? `<button class="btn-small" onclick="deactivateLeague('${league.id}')">Deactivate</button>` : ''}
-                ${adminLevel === 9 ? `<button class="btn-small danger" onclick="deleteLeague('${league.id}')">Delete</button>` : ''}
-              ` : ''}
-            </div>
-
-            <div class="divisions-section">
-              <div class="divisions-header">
-                <h4>Divisions</h4>
-                ${adminLevel >= 7 ? `<button class="btn-small" onclick="showCreateDivisionModal('${league.id}')">+ Add Division</button>` : ''}
-              </div>
-              <div id="divisions-${league.id}"></div>
-            </div>
-          </div>
-        `;
-      }
-      
-      html += '</div>';
+      html += `
+        <div class="league-filter">
+          <label for="leagueSelect">Select League:</label>
+          <select id="leagueSelect" onchange="filterLeagueDisplay(this.value)">
+            ${leagues.map(l => `<option value="${l.id}" ${l.id === activeLeague.id ? 'selected' : ''}>${l.league_name} (${l.year})</option>`).join('')}
+          </select>
+        </div>
+        
+        <div class="leagues-container" id="leaguesContainer">
+        </div>
+      `;
     }
 
     document.getElementById('leaguesContent').innerHTML = html;
     
-    for (const league of leagues) {
-      await loadDivisions(league.id);
+    if (leagues && leagues.length > 0) {
+      const activeLeague = leagues.find(l => l.is_active) || leagues[0];
+      window.allLeagues = leagues;
+      await displayLeague(activeLeague.id);
     }
   } catch (err) {
     console.error('Error loading leagues:', err);
     document.getElementById('leaguesContent').innerHTML = `<div class="error">Error: ${err.message}</div>`;
   }
+}
+
+async function filterLeagueDisplay(leagueId) {
+  await displayLeague(leagueId);
+}
+
+async function displayLeague(leagueId) {
+  const league = window.allLeagues.find(l => l.id === leagueId);
+  const adminLevel = currentProfile.admin_level || 0;
+  
+  if (!league) return;
+
+  let html = `
+    <div class="league-card full-width">
+      <div class="league-header">
+        <div>
+          <h3>${league.league_name}</h3>
+          <p class="league-year">Year: ${league.year}</p>
+        </div>
+        <div class="league-status">
+          ${league.is_active ? '<span class="badge active">Active</span>' : '<span class="badge">Inactive</span>'}
+        </div>
+      </div>
+      
+      <div class="league-actions">
+        ${adminLevel >= 7 ? `
+          ${!league.is_active && adminLevel >= 7 ? `<button class="btn-small" onclick="setActiveLeague('${league.id}')">Set Active</button>` : ''}
+          ${league.is_active && adminLevel >= 7 ? `<button class="btn-small" onclick="deactivateLeague('${league.id}')">Deactivate</button>` : ''}
+          ${adminLevel === 9 ? `<button class="btn-small danger" onclick="deleteLeague('${league.id}')">Delete</button>` : ''}
+        ` : ''}
+      </div>
+
+      <div class="divisions-section">
+        <div class="divisions-header">
+          <h4>Divisions</h4>
+          ${adminLevel >= 7 ? `<button class="btn-small" onclick="showCreateDivisionModal('${league.id}')">+ Add Division</button>` : ''}
+        </div>
+        <div id="divisions-${league.id}"></div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('leaguesContainer').innerHTML = html;
+  await loadDivisions(league.id);
 }
 
 async function loadDivisions(leagueId) {
@@ -595,7 +618,6 @@ async function loadDivisions(leagueId) {
             
             ${adminLevel >= 7 ? `
               <div class="division-actions">
-                <button class="btn-tiny" onclick="editDivision('${division.id}', '${leagueId}')">Edit</button>
                 ${!division.is_active && adminLevel >= 7 ? `<button class="btn-tiny" onclick="activateDivision('${division.id}')">Activate</button>` : ''}
                 ${division.is_active && adminLevel >= 7 ? `<button class="btn-tiny" onclick="deactivateDivision('${division.id}')">Deactivate</button>` : ''}
                 ${adminLevel === 9 ? `<button class="btn-tiny danger" onclick="deleteDivision('${division.id}')">Delete</button>` : ''}
@@ -605,7 +627,7 @@ async function loadDivisions(leagueId) {
             <div class="draft-grid">
               ${Array.from({length: 12}, (_, i) => i + 1).map(spot => `
                 <div class="draft-spot" id="spot-${division.id}-${spot}">
-                  <div class="spot-number">#{spot}</div>
+                  <div class="spot-number">#${spot}</div>
                   <div class="spot-member">Loading...</div>
                 </div>
               `).join('')}
@@ -662,13 +684,13 @@ async function loadDivisionMembers(divisionId) {
           const name = profile[0]?.name || 'Unknown';
           
           spotElement.innerHTML = `
-            <div class="spot-number">#{spot}</div>
+            <div class="spot-number">#${spot}</div>
             <div class="spot-member">${name}</div>
             ${adminLevel >= 4 ? `<button class="btn-spot" onclick="removeMember('${member.id}', '${divisionId}')">Remove</button>` : ''}
           `;
         } else {
           spotElement.innerHTML = `
-            <div class="spot-number">#{spot}</div>
+            <div class="spot-number">#${spot}</div>
             <div class="spot-member">Empty</div>
             ${adminLevel >= 4 ? `<button class="btn-spot" onclick="showAssignMemberModal('${divisionId}', ${spot})">Assign</button>` : ''}
           `;
