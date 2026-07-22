@@ -544,7 +544,7 @@ function setUserPassword(userId, userName) {
 
 async function callResetPasswordFunction(userId, newPassword) {
   try {
-    const functionUrl = 'https://fckobcxprmudfpxdmswi.functions.supabase.co/reset-user-password';
+    const functionUrl = 'https://fckobcxprmudfpxdmswi.supabase.co/functions/v1/reset-user-password';
     
     const res = await fetch(functionUrl, {
       method: 'POST',
