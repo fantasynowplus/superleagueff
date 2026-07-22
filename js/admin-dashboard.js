@@ -770,7 +770,6 @@ async function loadDivisionTeams(divisionId) {
             <th>Roster ID</th>
             <th>Sleeper Username</th>
             <th>Status</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -778,23 +777,25 @@ async function loadDivisionTeams(divisionId) {
             const profile = profileMap[member.user_id];
             if (!profile) return '';
             
+            const slffid = profile.slffid || profile.id.substring(0, 8);
+            
             return `
               <tr>
-                <td><strong>#${member.draft_spot}</strong></td>
+                <td><strong>${member.draft_spot || '-'}</strong></td>
                 <td>${profile.name || '-'}</td>
                 <td>${profile.email}</td>
-                <td>${profile.id.substring(0, 8)}...</td>
+                <td>${slffid}</td>
                 <td>${member.roster_id || '-'}</td>
                 <td>
-                  <span id="sleeper-${member.id}">${profile.sleeper_handle || '-'}</span>
+                  <div class="sleeper-cell">
+                    <span id="sleeper-${member.id}">${profile.sleeper_handle || '-'}</span>
+                    <button class="btn-update" onclick="updateSleeperHandle('${member.id}', '${profile.id}')">Update</button>
+                  </div>
                 </td>
                 <td>
                   <span class="badge ${profile.is_verified ? 'active' : 'inactive'}">
                     ${profile.is_verified ? 'Logged In' : 'Pending'}
                   </span>
-                </td>
-                <td>
-                  <button class="btn-update" onclick="updateSleeperHandle('${member.id}', '${profile.id}')">Update</button>
                 </td>
               </tr>
             `;
@@ -998,10 +999,28 @@ async function addSelectedUsersToDiv(divisionId) {
 
   try {
     const token = localStorage.getItem('sb-auth-token');
+    
+    const currentMembersRes = await fetch(`${SUPABASE_URL}/rest/v1/division_members?division_id=eq.${divisionId}&select=draft_spot`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!currentMembersRes.ok) throw new Error('Failed to get current members');
+
+    const currentMembers = await currentMembersRes.json();
+    const usedSpots = new Set(currentMembers.map(m => m.draft_spot));
+    
+    let nextSpot = 1;
     let successCount = 0;
     let errorDetails = [];
     
     for (const [userId, userName] of selectedUsers.entries()) {
+      while (usedSpots.has(nextSpot)) {
+        nextSpot++;
+      }
+
       try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members`, {
           method: 'POST',
@@ -1013,7 +1032,8 @@ async function addSelectedUsersToDiv(divisionId) {
           },
           body: JSON.stringify({
             division_id: divisionId,
-            user_id: userId
+            user_id: userId,
+            draft_spot: nextSpot
           })
         });
 
@@ -1028,6 +1048,8 @@ async function addSelectedUsersToDiv(divisionId) {
           }
         } else {
           successCount++;
+          usedSpots.add(nextSpot);
+          nextSpot++;
         }
       } catch (err) {
         console.error(`Error adding ${userName}:`, err);
@@ -1052,6 +1074,12 @@ async function addSelectedUsersToDiv(divisionId) {
       messageEl.style.marginTop = '10px';
       button.disabled = false;
       button.style.opacity = '1';
+      
+      setTimeout(() => {
+        document.querySelector('.modal').remove();
+        selectedUsers.clear();
+        loadDivisionTeams(divisionId);
+      }, 2000);
     } else {
       messageEl.textContent = errorDetails.length > 0 ? errorDetails[0] : 'Failed to add users';
       messageEl.style.color = '#dc2626';
