@@ -780,13 +780,18 @@ async function loadDivisionTeams(divisionId) {
             if (!profile) return '';
             
             const slffid = profile.slffid || profile.id.substring(0, 8);
-            const draftSpotDisplay = adminLevel >= 7 
-              ? `<span class="editable-spot" onclick="updateDraftSpot('${member.id}', '${divisionId}', '${member.user_id}', ${member.draft_spot || 'null'})" style="cursor: pointer; text-decoration: underline;">${member.draft_spot || '-'}</span>`
+            
+            const draftSpotCell = adminLevel >= 7
+              ? `<div class="editable-cell"><span class="editable-spot" onclick="updateDraftSpot('${member.id}', '${divisionId}', '${member.user_id}', ${member.draft_spot || 'null'})">${member.draft_spot || '-'}</span><button class="btn-inline-update" onclick="updateDraftSpot('${member.id}', '${divisionId}', '${member.user_id}', ${member.draft_spot || 'null'})">✎</button></div>`
               : `<strong>${member.draft_spot || '-'}</strong>`;
+            
+            const hasSleeperHandle = profile.sleeper_handle && profile.sleeper_handle.trim() !== '';
+            const statusDisplay = hasSleeperHandle ? 'Connected' : 'Pending';
+            const statusBadgeClass = hasSleeperHandle ? 'active' : 'inactive';
             
             return `
               <tr>
-                <td>${draftSpotDisplay}</td>
+                <td>${draftSpotCell}</td>
                 <td>${profile.name || '-'}</td>
                 <td>${profile.email}</td>
                 <td>${slffid}</td>
@@ -794,12 +799,12 @@ async function loadDivisionTeams(divisionId) {
                 <td>
                   <div class="sleeper-cell">
                     <span id="sleeper-${member.id}">${profile.sleeper_handle || '-'}</span>
-                    ${adminLevel >= 4 ? `<button class="btn-update" onclick="updateSleeperHandle('${member.id}', '${profile.id}')">Update</button>` : ''}
+                    ${adminLevel >= 4 ? `<button class="btn-inline-update" onclick="updateSleeperHandle('${member.id}', '${profile.id}')">✎</button>` : ''}
                   </div>
                 </td>
                 <td>
-                  <span class="badge ${profile.is_verified ? 'active' : 'inactive'}">
-                    ${profile.is_verified ? 'Logged In' : 'Pending'}
+                  <span class="badge ${statusBadgeClass}">
+                    ${statusDisplay}
                   </span>
                 </td>
                 ${adminLevel >= 7 ? `<td><button class="btn-remove" onclick="removeUserFromDivision('${member.id}', '${divisionId}', '${profile.name || profile.email}', '${member.user_id}')">Remove</button></td>` : ''}
