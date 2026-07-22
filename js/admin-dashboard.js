@@ -522,3 +522,52 @@ async function resetUserPassword(email) {
     alert('Error: ' + err.message);
   }
 }
+
+function setUserPassword(userId, userName) {
+  const newPassword = prompt(`Enter new password for ${userName}:\n\n(Must be at least 6 characters)`);
+  
+  if (!newPassword) {
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    alert('Password must be at least 6 characters long');
+    return;
+  }
+
+  if (!confirm(`Set password for ${userName}? This cannot be undone.`)) {
+    return;
+  }
+
+  callResetPasswordFunction(userId, newPassword);
+}
+
+async function callResetPasswordFunction(userId, newPassword) {
+  try {
+    const functionUrl = 'https://fckobcxprmudfpxdmswi.functions.supabase.co/reset-user-password';
+    
+    const res = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: userId,
+        newPassword: newPassword,
+        adminId: currentUser.id
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to set password');
+    }
+
+    alert('Password set successfully!');
+    document.querySelector('.user-detail-modal').remove();
+    loadAllUsers();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
