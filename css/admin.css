@@ -1241,6 +1241,16 @@ body {
   font-weight: 600;
 }
 
+.sleeper-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sleeper-cell span {
+  flex: 1;
+}
+
 .btn-update {
   padding: 4px 10px;
   background: #e26f0f;
@@ -1255,6 +1265,22 @@ body {
 
 .btn-update:hover {
   background: #c95d0a;
+}
+
+.btn-remove {
+  padding: 4px 10px;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-remove:hover {
+  background: #991b1b;
 }
 
 .division-link {
