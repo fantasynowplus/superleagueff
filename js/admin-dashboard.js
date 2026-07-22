@@ -551,22 +551,24 @@ async function callResetPasswordFunction(userId, newPassword) {
   }
 
   try {
-    const functionUrl = 'https://fckobcxprmudfpxdmswi.supabase.co/functions/v1/reset-user-password';
+    const token = localStorage.getItem('sb-auth-token');
     
-    const res = await fetch(functionUrl, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/reset_user_password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        userId: userId,
-        newPassword: newPassword
+        user_id: userId,
+        new_password: newPassword
       })
     });
 
     const data = await res.json();
 
-    if (!res.ok) {
+    if (!res.ok || data.error) {
       throw new Error(data.error || 'Failed to set password');
     }
 
