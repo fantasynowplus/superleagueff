@@ -1146,3 +1146,43 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+.league-filter {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.league-filter label {
+  font-weight: 600;
+  color: #e26f0f;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.league-filter select {
+  padding: 10px 12px;
+  background: #0a1f2e;
+  border: 1px solid #1a4d6f;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.league-filter select:focus {
+  outline: none;
+  border-color: #e26f0f;
+}
+
+.league-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.leagues-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
