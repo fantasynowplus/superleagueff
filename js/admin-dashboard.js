@@ -606,8 +606,8 @@ async function displayLeagueDivisions(leagueId, leagueName) {
               const hostPlatform = d.mfl_id ? 'MFL' : d.sleeper_id ? 'Sleeper' : '-';
               const stageName = stageNames[d.league_stage] || `Stage ${d.league_stage}`;
               return `
-              <tr onclick="viewDivisionDetails('${d.id}')">
-                <td><strong>${d.division_name}</strong></td>
+              <tr>
+                <td><strong><a class="division-link" onclick="viewDivisionDetails('${d.id}')">${d.division_name}</a></strong></td>
                 <td>${d.mfl_id || '-'}</td>
                 <td>${d.sleeper_id || '-'}</td>
                 <td>${d.draftboard_url ? `<a href="${d.draftboard_url}" target="_blank">View</a>` : '-'}</td>
@@ -617,7 +617,7 @@ async function displayLeagueDivisions(leagueId, leagueName) {
                 <td>-</td>
                 <td>${stageName}</td>
                 <td>${d.invite_link ? `<a href="${d.invite_link}" target="_blank">Join</a>` : '-'}</td>
-                <td><button class="btn-action" onclick="event.stopPropagation(); editDivision('${d.id}')">Edit</button></td>
+                <td><button class="btn-action" onclick="editDivisionModal('${d.id}')">Edit</button></td>
               </tr>
             `;
             }).join('')}
@@ -640,11 +640,212 @@ function applyDivisionsFilter(filter) {
   event.target.classList.add('active');
 }
 
-function viewDivisionDetails(divisionId) {
-  console.log('View division:', divisionId);
+async function viewDivisionDetails(divisionId) {
+  const token = localStorage.getItem('sb-auth-token');
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) throw new Error('Failed to load division');
+
+    const data = await res.json();
+    if (!data || data.length === 0) {
+      alert('Division not found');
+      return;
+    }
+
+    const division = data[0];
+    showDivisionDetailView(division);
+  } catch (err) {
+    alert('Error loading division: ' + err.message);
+  }
 }
 
-async function editDivision(divisionId) {
+function showDivisionDetailView(division) {
+  const stageNames = {
+    0: 'Pre-Draft',
+    1: 'League Filled',
+    2: 'League Linked',
+    3: 'Round 2',
+    4: 'Draft Completed'
+  };
+  
+  const hostPlatform = division.mfl_id ? 'MFL' : division.sleeper_id ? 'Sleeper' : 'Not Set';
+  const stageName = stageNames[division.league_stage] || `Stage ${division.league_stage}`;
+  
+  let html = `
+    <div class="division-detail-view">
+      <button class="back-button" onclick="backToDivisionsList()">← Back to Divisions</button>
+      
+      <div class="division-detail-header">
+        <div>
+          <h2>${division.division_name}</h2>
+          <div class="division-meta">
+            <span class="badge ${division.is_active ? 'active' : 'inactive'}">${division.is_active ? 'Active' : 'Inactive'}</span>
+            <span class="stage-badge">${stageName}</span>
+            <span class="host-badge">${hostPlatform}</span>
+          </div>
+        </div>
+        <button class="edit-division-btn" onclick="editDivision('${division.id}')">Edit Division</button>
+      </div>
+      
+      <div class="division-info-grid">
+        <div class="info-item">
+          <label>MFL ID</label>
+          <p>${division.mfl_id || '-'}</p>
+        </div>
+        <div class="info-item">
+          <label>Sleeper ID</label>
+          <p>${division.sleeper_id || '-'}</p>
+        </div>
+        <div class="info-item">
+          <label>Draftboard</label>
+          <p>${division.draftboard_url ? `<a href="${division.draftboard_url}" target="_blank">View Board</a>` : '-'}</p>
+        </div>
+        <div class="info-item">
+          <label>Invite Link</label>
+          <p>${division.invite_link ? `<a href="${division.invite_link}" target="_blank">Join League</a>` : '-'}</p>
+        </div>
+      </div>
+      
+      <div class="division-teams">
+        <h3>Teams in Division</h3>
+        <div id="teams-table-container"></div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('divisionsView').innerHTML = html;
+  loadDivisionTeams(division.id);
+}
+
+async function loadDivisionTeams(divisionId) {
+  const token = localStorage.getItem('sb-auth-token');
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members?division_id=eq.${divisionId}&order=draft_spot.asc`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) throw new Error('Failed to load teams');
+
+    const members = await res.json();
+    
+    if (!members || members.length === 0) {
+      document.getElementById('teams-table-container').innerHTML = '<p class="empty">No teams assigned to this division yet</p>';
+      return;
+    }
+
+    let profileIds = members.map(m => m.user_id);
+    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${profileIds.join(',')})`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!profileRes.ok) throw new Error('Failed to load profiles');
+
+    const profiles = await profileRes.json();
+    const profileMap = {};
+    profiles.forEach(p => profileMap[p.id] = p);
+
+    let html = `
+      <table class="teams-table">
+        <thead>
+          <tr>
+            <th>Draft Slot</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>SLFF ID</th>
+            <th>Roster ID</th>
+            <th>Sleeper Username</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${members.map(member => {
+            const profile = profileMap[member.user_id];
+            if (!profile) return '';
+            
+            return `
+              <tr>
+                <td><strong>#${member.draft_spot}</strong></td>
+                <td>${profile.name || '-'}</td>
+                <td>${profile.email}</td>
+                <td>${profile.id.substring(0, 8)}...</td>
+                <td>${member.roster_id || '-'}</td>
+                <td>
+                  <span id="sleeper-${member.id}">${profile.sleeper_handle || '-'}</span>
+                </td>
+                <td>
+                  <span class="badge ${profile.is_verified ? 'active' : 'inactive'}">
+                    ${profile.is_verified ? 'Logged In' : 'Pending'}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn-update" onclick="updateSleeperHandle('${member.id}', '${profile.id}')">Update</button>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+    
+    document.getElementById('teams-table-container').innerHTML = html;
+  } catch (err) {
+    console.error('Error loading teams:', err);
+    document.getElementById('teams-table-container').innerHTML = `<div class="error">Error loading teams: ${err.message}</div>`;
+  }
+}
+
+function backToDivisionsList() {
+  const leagueSelect = document.getElementById('leagueSelect');
+  if (leagueSelect) {
+    filterLeagueDisplay(leagueSelect.value);
+  }
+}
+
+async function updateSleeperHandle(memberId, userId) {
+  const newHandle = prompt('Enter new Sleeper username:');
+  if (!newHandle) return;
+
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        sleeper_handle: newHandle,
+        updated_at: new Date().toISOString()
+      })
+    });
+
+    if (!res.ok) throw new Error('Failed to update');
+
+    document.getElementById(`sleeper-${memberId}`).textContent = newHandle;
+    alert('Sleeper username updated!');
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+async function editDivisionModal(divisionId) {
   const adminLevel = currentProfile.admin_level || 0;
   
   if (adminLevel < 7) {
