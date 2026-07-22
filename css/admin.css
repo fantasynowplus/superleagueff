@@ -1244,7 +1244,7 @@ body {
 .sleeper-cell {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .sleeper-cell span {
@@ -1263,16 +1263,48 @@ body {
   color: #f0872f;
 }
 
-.btn-update {
-  padding: 4px 10px;
+.editable-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-inline-update {
+  padding: 2px 6px;
   background: #e26f0f;
   color: #000;
   border: none;
-  border-radius: 3px;
+  border-radius: 2px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   transition: background 0.2s;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-inline-update:hover {
+  background: #c95d0a;
+}
+
+.btn-update {
+  padding: 2px 6px;
+  background: #e26f0f;
+  color: #000;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  transition: background 0.2s;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-update:hover {
