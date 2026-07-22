@@ -705,11 +705,11 @@ function showDivisionDetailView(division) {
         </div>
         <div class="info-item">
           <label>Draftboard</label>
-          <p>${division.draftboard_url ? `<a href="${division.draftboard_url}" target="_blank">View Board</a>` : '-'}</p>
+          <p>${division.draftboard_url ? `<a href="${division.draftboard_url}" target="_blank" class="url-link">${division.draftboard_url}</a>` : '-'}</p>
         </div>
         <div class="info-item">
           <label>Invite Link</label>
-          <p>${division.invite_link ? `<a href="${division.invite_link}" target="_blank">Join League</a>` : '-'}</p>
+          <p>${division.invite_link ? `<a href="${division.invite_link}" target="_blank" class="url-link">${division.invite_link}</a>` : '-'}</p>
         </div>
       </div>
       
