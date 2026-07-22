@@ -633,8 +633,178 @@ function viewDivisionDetails(divisionId) {
   console.log('View division:', divisionId);
 }
 
-function editDivision(divisionId) {
-  alert('Division editing coming soon');
+async function editDivision(divisionId) {
+  const adminLevel = currentProfile.admin_level || 0;
+  
+  if (adminLevel < 7) {
+    alert('You do not have permission to edit divisions.');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) throw new Error('Failed to load division');
+
+    const data = await res.json();
+    if (!data || data.length === 0) {
+      alert('Division not found');
+      return;
+    }
+
+    const division = data[0];
+    showEditDivisionModal(division);
+  } catch (err) {
+    alert('Error loading division: ' + err.message);
+  }
+}
+
+function showEditDivisionModal(division) {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content division-modal">
+      <button class="modal-close" onclick="this.closest('.modal').remove()">✕</button>
+      <h3>Edit Division: ${division.division_name}</h3>
+      
+      <div class="form-group">
+        <label for="div-name">Division Name</label>
+        <input type="text" id="div-name" value="${division.division_name || ''}">
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="div-mfl">MFL ID</label>
+          <input type="text" id="div-mfl" value="${division.mfl_id || ''}">
+        </div>
+        
+        <div class="form-group">
+          <label for="div-sleeper">Sleeper ID</label>
+          <input type="text" id="div-sleeper" value="${division.sleeper_id || ''}">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="div-draftboard">Draftboard URL</label>
+        <input type="url" id="div-draftboard" placeholder="https://..." value="${division.draftboard_url || ''}">
+      </div>
+      
+      <div class="form-group">
+        <label for="div-invite">Invite Link</label>
+        <input type="url" id="div-invite" placeholder="https://..." value="${division.invite_link || ''}">
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="div-active">Status</label>
+          <select id="div-active">
+            <option value="false" ${!division.is_active ? 'selected' : ''}>Inactive</option>
+            <option value="true" ${division.is_active ? 'selected' : ''}>Active</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="div-stage">League Stage</label>
+          <select id="div-stage">
+            <option value="0" ${division.league_stage === 0 ? 'selected' : ''}>Stage 0 - Pre-Draft</option>
+            <option value="1" ${division.league_stage === 1 ? 'selected' : ''}>Stage 1 - Regular</option>
+            <option value="2" ${division.league_stage === 2 ? 'selected' : ''}>Stage 2 - Playoffs</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="div-full">League Full</label>
+          <select id="div-full">
+            <option value="false" ${!division.league_full ? 'selected' : ''}>Not Full</option>
+            <option value="true" ${division.league_full ? 'selected' : ''}>Full</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="modal-button" onclick="saveDivisionChanges('${division.id}')">Save Changes</button>
+        <button class="modal-button cancel-btn" onclick="this.closest('.modal').remove()">Cancel</button>
+        <div id="division-edit-message"></div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+async function saveDivisionChanges(divisionId) {
+  const adminLevel = currentProfile.admin_level || 0;
+  
+  if (adminLevel < 7) {
+    alert('You do not have permission to edit divisions.');
+    return;
+  }
+
+  const updates = {
+    division_name: document.getElementById('div-name').value.trim(),
+    mfl_id: document.getElementById('div-mfl').value.trim() || null,
+    sleeper_id: document.getElementById('div-sleeper').value.trim() || null,
+    draftboard_url: document.getElementById('div-draftboard').value.trim() || null,
+    invite_link: document.getElementById('div-invite').value.trim() || null,
+    is_active: document.getElementById('div-active').value === 'true',
+    league_stage: parseInt(document.getElementById('div-stage').value),
+    league_full: document.getElementById('div-full').value === 'true',
+    updated_at: new Date().toISOString()
+  };
+
+  if (!updates.division_name) {
+    alert('Division name is required');
+    return;
+  }
+
+  const button = document.querySelector('.modal-actions .modal-button:not(.cancel-btn)');
+  button.disabled = true;
+  button.style.opacity = '0.6';
+
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(updates)
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(`Failed to update division: ${error}`);
+    }
+
+    const messageEl = document.getElementById('division-edit-message');
+    messageEl.textContent = 'Changes saved successfully!';
+    messageEl.style.color = '#16a34a';
+    messageEl.style.marginTop = '10px';
+
+    setTimeout(() => {
+      document.querySelector('.modal').remove();
+      loadLeagues();
+    }, 1500);
+  } catch (err) {
+    console.error('Error saving changes:', err);
+    button.disabled = false;
+    button.style.opacity = '1';
+    const messageEl = document.getElementById('division-edit-message');
+    messageEl.textContent = 'Error: ' + err.message;
+    messageEl.style.color = '#dc2626';
+    messageEl.style.marginTop = '10px';
+  }
 }
 
 function showCreateLeagueModal() {
