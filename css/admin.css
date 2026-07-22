@@ -1043,3 +1043,37 @@ body {
 .back-link a:hover {
   color: #c95d0a;
 }
+
+.division-modal {
+  max-width: 500px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.form-row .form-group {
+  margin-bottom: 0;
+}
+
+.modal .form-group input[type="url"],
+.modal .form-group input[type="text"] {
+  background: #0a1f2e;
+  border: 1px solid #1a4d6f;
+  color: #fff;
+}
+
+.modal .form-group select {
+  background: #0a1f2e;
+  border: 1px solid #1a4d6f;
+  color: #fff;
+  cursor: pointer;
+}
+
+.modal .form-group select option {
+  background: #06192b;
+  color: #fff;
+}
