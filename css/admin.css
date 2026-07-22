@@ -378,6 +378,13 @@ body {
   margin: 20px 0;
 }
 
+.empty {
+  text-align: center;
+  padding: 20px;
+  color: #aaa;
+  font-size: 13px;
+}
+
 .users-table {
   width: 100%;
   border-collapse: collapse;
@@ -563,7 +570,6 @@ body {
 
 .divisions-table tbody tr {
   transition: background 0.2s;
-  cursor: pointer;
 }
 
 .divisions-table tbody tr:hover {
@@ -619,20 +625,6 @@ body {
 
 .btn-action:hover {
   background: #c95d0a;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: #aaa;
-  font-size: 14px;
-}
-
-.empty {
-  text-align: center;
-  padding: 20px;
-  color: #aaa;
-  font-size: 13px;
 }
 
 .modal {
@@ -1043,6 +1035,241 @@ body {
   color: #c95d0a;
 }
 
+.division-detail-view {
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.back-button {
+  display: inline-block;
+  padding: 8px 16px;
+  background: transparent;
+  color: #e26f0f;
+  border: 1px solid #e26f0f;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 20px;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  background: #e26f0f;
+  color: #000;
+}
+
+.division-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #0a1f2e;
+  border: 2px solid #1a4d6f;
+  border-radius: 8px;
+}
+
+.division-detail-header h2 {
+  margin: 0 0 10px 0;
+  font-size: 28px;
+  color: #fff;
+}
+
+.division-meta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.stage-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  background: #1a4d6f;
+  color: #e26f0f;
+  border: 1px solid #e26f0f;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.edit-division-btn {
+  padding: 10px 20px;
+  background: #e26f0f;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.edit-division-btn:hover {
+  background: #c95d0a;
+}
+
+.division-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.info-item {
+  background: #0a1f2e;
+  border: 1px solid #1a4d6f;
+  padding: 15px;
+  border-radius: 6px;
+}
+
+.info-item label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #e26f0f;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.info-item p {
+  margin: 0;
+  font-size: 13px;
+  color: #fff;
+  word-break: break-word;
+}
+
+.info-item a {
+  color: #e26f0f;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.info-item a:hover {
+  text-decoration: underline;
+}
+
+.division-teams {
+  margin-top: 30px;
+}
+
+.division-teams h3 {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.teams-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #0a1f2e;
+  border: 1px solid #1a4d6f;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.teams-table thead {
+  background: #1a4d6f;
+}
+
+.teams-table th {
+  padding: 12px 15px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e26f0f;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #1a4d6f;
+  white-space: nowrap;
+}
+
+.teams-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #1a4d6f;
+  font-size: 13px;
+  color: #fff;
+}
+
+.teams-table tbody tr {
+  transition: background 0.2s;
+}
+
+.teams-table tbody tr:hover {
+  background: rgba(226, 111, 15, 0.05);
+}
+
+.teams-table strong {
+  color: #e26f0f;
+  font-weight: 600;
+}
+
+.btn-update {
+  padding: 4px 10px;
+  background: #e26f0f;
+  color: #000;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-update:hover {
+  background: #c95d0a;
+}
+
+.division-link {
+  color: #e26f0f;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.division-link:hover {
+  color: #f0872f;
+  text-decoration: underline;
+}
+
+.url-link {
+  color: #e26f0f;
+  text-decoration: none;
+  font-weight: 600;
+  word-break: break-all;
+  display: block;
+  font-size: 12px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  transition: all 0.2s;
+  padding: 6px 8px;
+  background: rgba(226, 111, 15, 0.05);
+  border-radius: 3px;
+  border-left: 2px solid #e26f0f;
+  line-height: 1.4;
+}
+
+.url-link:hover {
+  background: rgba(226, 111, 15, 0.15);
+  text-decoration: underline;
+}
+
 @media (max-width: 1200px) {
   .profile-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -1050,6 +1277,10 @@ body {
 
   .edit-form {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .division-info-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1075,6 +1306,23 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .division-detail-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .division-meta {
+    width: 100%;
+  }
+
+  .edit-division-btn {
+    width: 100%;
+  }
+
+  .division-info-grid {
+    grid-template-columns: 1fr;
+  }
+
   .modal .modal-content {
     max-width: 90vw;
   }
@@ -1082,217 +1330,13 @@ body {
   .user-detail-modal .modal-content {
     max-width: 95vw;
   }
-}
 
-.division-detail-view {
-  animation: slideIn 0.2s ease-out;
-}
- 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
+  .teams-table {
+    font-size: 12px;
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+
+  .teams-table th,
+  .teams-table td {
+    padding: 8px 10px;
   }
-}
- 
-.back-button {
-  display: inline-block;
-  padding: 8px 16px;
-  background: transparent;
-  color: #e26f0f;
-  border: 1px solid #e26f0f;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 12px;
-  margin-bottom: 20px;
-  transition: all 0.2s;
-}
- 
-.back-button:hover {
-  background: #e26f0f;
-  color: #000;
-}
- 
-.division-detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: #0a1f2e;
-  border: 2px solid #1a4d6f;
-  border-radius: 8px;
-}
- 
-.division-detail-header h2 {
-  margin: 0 0 10px 0;
-  font-size: 28px;
-  color: #fff;
-}
- 
-.division-meta {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
- 
-.stage-badge {
-  display: inline-block;
-  padding: 6px 12px;
-  background: #1a4d6f;
-  color: #e26f0f;
-  border: 1px solid #e26f0f;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
- 
-.edit-division-btn {
-  padding: 10px 20px;
-  background: #e26f0f;
-  color: #000;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
-  transition: background 0.2s;
-}
- 
-.edit-division-btn:hover {
-  background: #c95d0a;
-}
- 
-.division-info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-bottom: 30px;
-}
- 
-.info-item {
-  background: #0a1f2e;
-  border: 1px solid #1a4d6f;
-  padding: 15px;
-  border-radius: 6px;
-}
- 
-.info-item label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  color: #e26f0f;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
-}
- 
-.info-item p {
-  margin: 0;
-  font-size: 14px;
-  color: #fff;
-  word-break: break-word;
-}
- 
-.info-item a {
-  color: #e26f0f;
-  text-decoration: none;
-  font-weight: 600;
-}
- 
-.info-item a:hover {
-  text-decoration: underline;
-}
- 
-.division-teams {
-  margin-top: 30px;
-}
- 
-.division-teams h3 {
-  margin: 0 0 15px 0;
-  font-size: 18px;
-  color: #fff;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
- 
-.teams-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #0a1f2e;
-  border: 1px solid #1a4d6f;
-  border-radius: 6px;
-  overflow: hidden;
-}
- 
-.teams-table thead {
-  background: #1a4d6f;
-}
- 
-.teams-table th {
-  padding: 12px 15px;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 700;
-  color: #e26f0f;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid #1a4d6f;
-  white-space: nowrap;
-}
- 
-.teams-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #1a4d6f;
-  font-size: 13px;
-  color: #fff;
-}
- 
-.teams-table tbody tr {
-  transition: background 0.2s;
-}
- 
-.teams-table tbody tr:hover {
-  background: rgba(226, 111, 15, 0.05);
-}
- 
-.teams-table strong {
-  color: #e26f0f;
-  font-weight: 600;
-}
- 
-.btn-update {
-  padding: 4px 10px;
-  background: #e26f0f;
-  color: #000;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  transition: background 0.2s;
-}
- 
-.btn-update:hover {
-  background: #c95d0a;
-}
- 
-.division-link {
-  color: #e26f0f;
-  cursor: pointer;
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 0.2s;
-}
- 
-.division-link:hover {
-  color: #f0872f;
-  text-decoration: underline;
 }
