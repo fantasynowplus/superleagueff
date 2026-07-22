@@ -328,7 +328,10 @@ function showUserDetailModal(user) {
       </div>
       
       <div class="modal-actions" id="modalActions">
-        ${canEdit ? `<button class="modal-button" onclick="editUserProfile('${user.id}')">Edit Profile</button>` : ''}
+        ${canEdit ? `
+          <button class="modal-button" onclick="editUserProfile('${user.id}')">Edit Profile</button>
+          <button class="modal-button reset-pwd-btn" onclick="resetUserPassword('${user.email}')">Reset Password</button>
+        ` : ''}
       </div>
     </div>
   `;
@@ -492,3 +495,29 @@ async function loadAdminManagement() {
 }
 
 initAdmin();
+
+async function resetUserPassword(email) {
+  if (!confirm(`Send password reset email to ${email}?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ email })
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error_description || 'Failed to send reset email');
+    }
+
+    alert(`Password reset email sent to ${email}`);
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
