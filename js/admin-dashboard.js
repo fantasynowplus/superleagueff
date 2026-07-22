@@ -727,6 +727,7 @@ function showDivisionDetailView(division) {
 
 async function loadDivisionTeams(divisionId) {
   const token = localStorage.getItem('sb-auth-token');
+  const adminLevel = currentProfile.admin_level || 0;
   
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members?division_id=eq.${divisionId}&order=draft_spot.asc`, {
@@ -770,6 +771,7 @@ async function loadDivisionTeams(divisionId) {
             <th>Roster ID</th>
             <th>Sleeper Username</th>
             <th>Status</th>
+            ${adminLevel >= 7 ? '<th>Actions</th>' : ''}
           </tr>
         </thead>
         <tbody>
@@ -789,7 +791,7 @@ async function loadDivisionTeams(divisionId) {
                 <td>
                   <div class="sleeper-cell">
                     <span id="sleeper-${member.id}">${profile.sleeper_handle || '-'}</span>
-                    <button class="btn-update" onclick="updateSleeperHandle('${member.id}', '${profile.id}')">Update</button>
+                    ${adminLevel >= 4 ? `<button class="btn-update" onclick="updateSleeperHandle('${member.id}', '${profile.id}')">Update</button>` : ''}
                   </div>
                 </td>
                 <td>
@@ -797,6 +799,7 @@ async function loadDivisionTeams(divisionId) {
                     ${profile.is_verified ? 'Logged In' : 'Pending'}
                   </span>
                 </td>
+                ${adminLevel >= 7 ? `<td><button class="btn-remove" onclick="removeUserFromDivision('${member.id}', '${divisionId}', '${profile.name || profile.email}')">Remove</button></td>` : ''}
               </tr>
             `;
           }).join('')}
@@ -1095,6 +1098,34 @@ async function addSelectedUsersToDiv(divisionId) {
     messageEl.textContent = 'Error: ' + err.message;
     messageEl.style.color = '#dc2626';
     messageEl.style.marginTop = '10px';
+  }
+}
+
+async function removeUserFromDivision(memberId, divisionId, userName) {
+  if (!confirm(`Remove ${userName} from this division?`)) {
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members?id=eq.${memberId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(`Failed to remove user: ${error}`);
+    }
+
+    alert(`${userName} has been removed from the division`);
+    loadDivisionTeams(divisionId);
+  } catch (err) {
+    alert('Error: ' + err.message);
   }
 }
 
