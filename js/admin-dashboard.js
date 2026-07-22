@@ -330,7 +330,8 @@ function showUserDetailModal(user) {
       <div class="modal-actions" id="modalActions">
         ${canEdit ? `
           <button class="modal-button" onclick="editUserProfile('${user.id}')">Edit Profile</button>
-          <button class="modal-button reset-pwd-btn" onclick="resetUserPassword('${user.email}')">Reset Password</button>
+          <button class="modal-button reset-pwd-btn" onclick="resetUserPassword('${user.email}')">Send Reset Email</button>
+          ${currentProfile.admin_level === 9 ? `<button class="modal-button danger-btn" onclick="setUserPassword('${user.id}', '${user.name || 'User'}')">Set Password</button>` : ''}
         ` : ''}
       </div>
     </div>
