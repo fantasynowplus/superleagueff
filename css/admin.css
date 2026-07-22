@@ -716,6 +716,11 @@ body {
   box-shadow: 0 0 0 2px rgba(226, 111, 15, 0.2);
 }
 
+.modal .form-group select option {
+  background: #06192b;
+  color: #fff;
+}
+
 .modal .modal-button {
   width: 100%;
   padding: 12px;
@@ -884,45 +889,39 @@ body {
   text-decoration: underline;
 }
 
-@media (max-width: 1200px) {
-  .profile-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .edit-form {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.division-modal {
+  max-width: 500px;
 }
 
-@media (max-width: 768px) {
-  .admin-sidebar {
-    width: 180px;
-  }
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 15px;
+}
 
-  .admin-main {
-    margin-left: 180px;
-    width: calc(100% - 180px);
-  }
+.form-row .form-group {
+  margin-bottom: 0;
+}
 
-  .admin-header {
-    left: 180px;
-  }
+.host-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #e26f0f;
+  color: #000;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 5px;
+}
 
-  .profile-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .edit-form {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .modal .modal-content {
-    max-width: 90vw;
-  }
-
-  .user-detail-modal .modal-content {
-    max-width: 95vw;
-  }
+.host-note {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 8px;
+  margin-bottom: 0;
 }
 
 .login-container {
@@ -1044,36 +1043,43 @@ body {
   color: #c95d0a;
 }
 
-.division-modal {
-  max-width: 500px;
+@media (max-width: 1200px) {
+  .profile-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .edit-form {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
-  margin-bottom: 15px;
-}
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: 180px;
+  }
 
-.form-row .form-group {
-  margin-bottom: 0;
-}
+  .admin-main {
+    margin-left: 180px;
+    width: calc(100% - 180px);
+  }
 
-.modal .form-group input[type="url"],
-.modal .form-group input[type="text"] {
-  background: #0a1f2e;
-  border: 1px solid #1a4d6f;
-  color: #fff;
-}
+  .admin-header {
+    left: 180px;
+  }
 
-.modal .form-group select {
-  background: #0a1f2e;
-  border: 1px solid #1a4d6f;
-  color: #fff;
-  cursor: pointer;
-}
+  .profile-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
-.modal .form-group select option {
-  background: #06192b;
-  color: #fff;
+  .edit-form {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .modal .modal-content {
+    max-width: 90vw;
+  }
+
+  .user-detail-modal .modal-content {
+    max-width: 95vw;
+  }
 }
