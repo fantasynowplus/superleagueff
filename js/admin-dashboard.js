@@ -992,45 +992,77 @@ async function addSelectedUsersToDiv(divisionId) {
     return;
   }
 
+  const button = document.querySelector('.add-users-modal .modal-button:not(.cancel-btn)');
+  button.disabled = true;
+  button.style.opacity = '0.6';
+
   try {
     const token = localStorage.getItem('sb-auth-token');
+    let successCount = 0;
+    let errorDetails = [];
     
-    for (const [userId, _] of selectedUsers.entries()) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          division_id: divisionId,
-          user_id: userId,
-          draft_spot: null
-        })
-      });
+    for (const [userId, userName] of selectedUsers.entries()) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${token}`,
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            division_id: divisionId,
+            user_id: userId
+          })
+        });
 
-      if (!res.ok) {
-        const error = await res.text();
-        if (error.includes('duplicate')) {
-          console.warn(`User already in division`);
+        if (!res.ok) {
+          const error = await res.text();
+          console.error(`Error adding ${userName}:`, res.status, error);
+          
+          if (error.includes('duplicate key') || error.includes('violates unique constraint')) {
+            errorDetails.push(`${userName} is already in this division`);
+          } else {
+            errorDetails.push(`Failed to add ${userName}`);
+          }
         } else {
-          throw new Error(`Failed to add user`);
+          successCount++;
         }
+      } catch (err) {
+        console.error(`Error adding ${userName}:`, err);
+        errorDetails.push(`Error adding ${userName}`);
       }
     }
 
     const messageEl = document.getElementById('add-users-message');
-    messageEl.textContent = `${selectedUsers.size} user(s) added successfully!`;
-    messageEl.style.color = '#16a34a';
-    messageEl.style.marginTop = '10px';
-
-    setTimeout(() => {
-      document.querySelector('.modal').remove();
-      selectedUsers.clear();
-      loadDivisionTeams(divisionId);
-    }, 1500);
+    
+    if (successCount > 0 && errorDetails.length === 0) {
+      messageEl.textContent = `Successfully added ${successCount} user(s)!`;
+      messageEl.style.color = '#16a34a';
+      
+      setTimeout(() => {
+        document.querySelector('.modal').remove();
+        selectedUsers.clear();
+        loadDivisionTeams(divisionId);
+      }, 1500);
+    } else if (successCount > 0) {
+      messageEl.textContent = `Added ${successCount} user(s). Issues: ${errorDetails.join(', ')}`;
+      messageEl.style.color = '#f59e0b';
+      messageEl.style.marginTop = '10px';
+      button.disabled = false;
+      button.style.opacity = '1';
+    } else {
+      messageEl.textContent = errorDetails.length > 0 ? errorDetails[0] : 'Failed to add users';
+      messageEl.style.color = '#dc2626';
+      messageEl.style.marginTop = '10px';
+      button.disabled = false;
+      button.style.opacity = '1';
+    }
   } catch (err) {
+    console.error('Error in addSelectedUsersToDiv:', err);
+    button.disabled = false;
+    button.style.opacity = '1';
     const messageEl = document.getElementById('add-users-message');
     messageEl.textContent = 'Error: ' + err.message;
     messageEl.style.color = '#dc2626';
