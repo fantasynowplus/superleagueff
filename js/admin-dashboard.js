@@ -543,6 +543,13 @@ function setUserPassword(userId, userName) {
 }
 
 async function callResetPasswordFunction(userId, newPassword) {
+  const adminLevel = currentProfile.admin_level || 0;
+  
+  if (adminLevel !== 9) {
+    alert('Only Level 9 admins can set passwords');
+    return;
+  }
+
   try {
     const functionUrl = 'https://fckobcxprmudfpxdmswi.supabase.co/functions/v1/reset-user-password';
     
@@ -553,8 +560,7 @@ async function callResetPasswordFunction(userId, newPassword) {
       },
       body: JSON.stringify({
         userId: userId,
-        newPassword: newPassword,
-        adminId: currentUser.id
+        newPassword: newPassword
       })
     });
 
@@ -569,5 +575,6 @@ async function callResetPasswordFunction(userId, newPassword) {
     loadAllUsers();
   } catch (err) {
     alert('Error: ' + err.message);
+    console.error('Password reset error:', err);
   }
 }
