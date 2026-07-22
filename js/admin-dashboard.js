@@ -331,7 +331,6 @@ function showUserDetailModal(user) {
         ${canEdit ? `
           <button class="modal-button" onclick="editUserProfile('${user.id}')">Edit Profile</button>
           <button class="modal-button reset-pwd-btn" onclick="resetUserPassword('${user.email}')">Send Reset Email</button>
-          ${currentProfile.admin_level === 9 ? `<button class="modal-button danger-btn" onclick="setUserPassword('${user.id}', '${user.name || 'User'}')">Set Password</button>` : ''}
         ` : ''}
       </div>
     </div>
@@ -487,16 +486,6 @@ async function saveUserChanges(userId) {
   }
 }
 
-async function loadLeagues() {
-  document.getElementById('leaguesContent').innerHTML = '<div class="loading">Loading leagues...</div>';
-}
-
-async function loadAdminManagement() {
-  document.getElementById('adminContent').innerHTML = '<div class="loading">Loading admin management...</div>';
-}
-
-initAdmin();
-
 async function resetUserPassword(email) {
   if (!confirm(`Send password reset email to ${email}?`)) {
     return;
@@ -523,60 +512,12 @@ async function resetUserPassword(email) {
   }
 }
 
-function setUserPassword(userId, userName) {
-  const newPassword = prompt(`Enter new password for ${userName}:\n\n(Must be at least 6 characters)`);
-  
-  if (!newPassword) {
-    return;
-  }
-
-  if (newPassword.length < 6) {
-    alert('Password must be at least 6 characters long');
-    return;
-  }
-
-  if (!confirm(`Set password for ${userName}? This cannot be undone.`)) {
-    return;
-  }
-
-  callResetPasswordFunction(userId, newPassword);
+async function loadLeagues() {
+  document.getElementById('leaguesContent').innerHTML = '<div class="loading">Loading leagues...</div>';
 }
 
-async function callResetPasswordFunction(userId, newPassword) {
-  const adminLevel = currentProfile.admin_level || 0;
-  
-  if (adminLevel !== 9) {
-    alert('Only Level 9 admins can set passwords');
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/reset_user_password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        user_id: userId,
-        new_password: newPassword
-      })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok || data.error) {
-      throw new Error(data.error || 'Failed to set password');
-    }
-
-    alert('Password set successfully!');
-    document.querySelector('.user-detail-modal').remove();
-    loadAllUsers();
-  } catch (err) {
-    alert('Error: ' + err.message);
-    console.error('Password reset error:', err);
-  }
+async function loadAdminManagement() {
+  document.getElementById('adminContent').innerHTML = '<div class="loading">Loading admin management...</div>';
 }
+
+initAdmin();
