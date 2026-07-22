@@ -1251,6 +1251,18 @@ body {
   flex: 1;
 }
 
+.editable-spot {
+  color: #e26f0f;
+  padding: 2px 4px;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.editable-spot:hover {
+  background: rgba(226, 111, 15, 0.2);
+  color: #f0872f;
+}
+
 .btn-update {
   padding: 4px 10px;
   background: #e26f0f;
