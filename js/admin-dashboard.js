@@ -780,10 +780,13 @@ async function loadDivisionTeams(divisionId) {
             if (!profile) return '';
             
             const slffid = profile.slffid || profile.id.substring(0, 8);
+            const draftSpotDisplay = adminLevel >= 7 
+              ? `<span class="editable-spot" onclick="updateDraftSpot('${member.id}', '${divisionId}', '${member.user_id}', ${member.draft_spot || 'null'})" style="cursor: pointer; text-decoration: underline;">${member.draft_spot || '-'}</span>`
+              : `<strong>${member.draft_spot || '-'}</strong>`;
             
             return `
               <tr>
-                <td><strong>${member.draft_spot || '-'}</strong></td>
+                <td>${draftSpotDisplay}</td>
                 <td>${profile.name || '-'}</td>
                 <td>${profile.email}</td>
                 <td>${slffid}</td>
@@ -799,7 +802,7 @@ async function loadDivisionTeams(divisionId) {
                     ${profile.is_verified ? 'Logged In' : 'Pending'}
                   </span>
                 </td>
-                ${adminLevel >= 7 ? `<td><button class="btn-remove" onclick="removeUserFromDivision('${member.id}', '${divisionId}', '${profile.name || profile.email}')">Remove</button></td>` : ''}
+                ${adminLevel >= 7 ? `<td><button class="btn-remove" onclick="removeUserFromDivision('${member.id}', '${divisionId}', '${profile.name || profile.email}', '${member.user_id}')">Remove</button></td>` : ''}
               </tr>
             `;
           }).join('')}
@@ -1003,27 +1006,11 @@ async function addSelectedUsersToDiv(divisionId) {
   try {
     const token = localStorage.getItem('sb-auth-token');
     
-    const currentMembersRes = await fetch(`${SUPABASE_URL}/rest/v1/division_members?division_id=eq.${divisionId}&select=draft_spot`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      }
-    });
-
-    if (!currentMembersRes.ok) throw new Error('Failed to get current members');
-
-    const currentMembers = await currentMembersRes.json();
-    const usedSpots = new Set(currentMembers.map(m => m.draft_spot));
-    
-    let nextSpot = 1;
     let successCount = 0;
     let errorDetails = [];
+    const successfulUserIds = [];
     
     for (const [userId, userName] of selectedUsers.entries()) {
-      while (usedSpots.has(nextSpot)) {
-        nextSpot++;
-      }
-
       try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members`, {
           method: 'POST',
@@ -1035,8 +1022,7 @@ async function addSelectedUsersToDiv(divisionId) {
           },
           body: JSON.stringify({
             division_id: divisionId,
-            user_id: userId,
-            draft_spot: nextSpot
+            user_id: userId
           })
         });
 
@@ -1051,12 +1037,17 @@ async function addSelectedUsersToDiv(divisionId) {
           }
         } else {
           successCount++;
-          usedSpots.add(nextSpot);
-          nextSpot++;
+          successfulUserIds.push(userId);
         }
       } catch (err) {
         console.error(`Error adding ${userName}:`, err);
         errorDetails.push(`Error adding ${userName}`);
+      }
+    }
+
+    if (successfulUserIds.length > 0) {
+      for (const userId of successfulUserIds) {
+        await syncProfileWithDivision(userId, divisionId, null);
       }
     }
 
@@ -1101,7 +1092,100 @@ async function addSelectedUsersToDiv(divisionId) {
   }
 }
 
-async function removeUserFromDivision(memberId, divisionId, userName) {
+async function updateDraftSpot(memberId, divisionId, userId, currentSpot) {
+  const newSpot = prompt(`Enter draft spot (1-12, or leave blank for none):`, currentSpot || '');
+  
+  if (newSpot === null) return;
+  
+  const draftSpot = newSpot.trim() === '' ? null : parseInt(newSpot);
+  
+  if (draftSpot && (draftSpot < 1 || draftSpot > 12 || isNaN(draftSpot))) {
+    alert('Draft spot must be between 1 and 12, or leave blank');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members?id=eq.${memberId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        draft_spot: draftSpot,
+        updated_at: new Date().toISOString()
+      })
+    });
+
+    if (!res.ok) throw new Error('Failed to update draft spot');
+
+    await syncProfileWithDivision(userId, divisionId, draftSpot);
+    loadDivisionTeams(divisionId);
+    alert('Draft spot updated!');
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+async function syncProfileWithDivision(userId, divisionId, draftSpot) {
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    
+    const divRes = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}&select=id,league_id`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!divRes.ok) return;
+    
+    const divData = await divRes.json();
+    if (!divData || divData.length === 0) return;
+    
+    const division = divData[0];
+
+    const leagueRes = await fetch(`${SUPABASE_URL}/rest/v1/leagues?id=eq.${division.league_id}&select=id,league_name`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!leagueRes.ok) return;
+    
+    const leagueData = await leagueRes.json();
+    if (!leagueData || leagueData.length === 0) return;
+    
+    const league = leagueData[0];
+
+    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        assigned_league_id: division.league_id,
+        assigned_league: league.league_name,
+        draft_spot: draftSpot,
+        updated_at: new Date().toISOString()
+      })
+    });
+
+    if (!profileRes.ok) {
+      console.error('Failed to sync profile');
+    }
+  } catch (err) {
+    console.error('Error syncing profile:', err);
+  }
+}
+
+async function removeUserFromDivision(memberId, divisionId, userName, userId) {
   if (!confirm(`Remove ${userName} from this division?`)) {
     return;
   }
@@ -1120,6 +1204,25 @@ async function removeUserFromDivision(memberId, divisionId, userName) {
     if (!res.ok) {
       const error = await res.text();
       throw new Error(`Failed to remove user: ${error}`);
+    }
+
+    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        assigned_league_id: null,
+        assigned_league: null,
+        draft_spot: null,
+        updated_at: new Date().toISOString()
+      })
+    });
+
+    if (!profileRes.ok) {
+      console.error('Failed to clear profile assignment');
     }
 
     alert(`${userName} has been removed from the division`);
