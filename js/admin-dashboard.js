@@ -675,7 +675,6 @@ function showDivisionDetailView(division) {
     4: 'Draft Completed'
   };
   
-  const hostPlatform = division.mfl_id ? 'MFL' : division.sleeper_id ? 'Sleeper' : 'Not Set';
   const stageName = stageNames[division.league_stage] || `Stage ${division.league_stage}`;
   
   let html = `
@@ -688,10 +687,12 @@ function showDivisionDetailView(division) {
           <div class="division-meta">
             <span class="badge ${division.is_active ? 'active' : 'inactive'}">${division.is_active ? 'Active' : 'Inactive'}</span>
             <span class="stage-badge">${stageName}</span>
-            <span class="host-badge">${hostPlatform}</span>
           </div>
         </div>
-        <button class="edit-division-btn" onclick="editDivision('${division.id}')">Edit Division</button>
+        <div class="header-actions">
+          <button class="edit-division-btn" onclick="editDivisionFromDetail('${division.id}')">Edit Division</button>
+          <button class="add-users-btn" onclick="showAddUsersModal('${division.id}')">+ Add Users</button>
+        </div>
       </div>
       
       <div class="division-info-grid">
@@ -813,6 +814,188 @@ function backToDivisionsList() {
   const leagueSelect = document.getElementById('leagueSelect');
   if (leagueSelect) {
     filterLeagueDisplay(leagueSelect.value);
+  }
+}
+
+async function editDivisionFromDetail(divisionId) {
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) throw new Error('Failed to load division');
+
+    const data = await res.json();
+    if (!data || data.length === 0) {
+      alert('Division not found');
+      return;
+    }
+
+    showEditDivisionModal(data[0]);
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+async function showAddUsersModal(divisionId) {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content add-users-modal">
+      <button class="modal-close" onclick="this.closest('.modal').remove()">✕</button>
+      <h3>Add Users to Division</h3>
+      
+      <div class="form-group">
+        <label for="user-search">Search Users</label>
+        <input type="text" id="user-search" placeholder="Search by name or email...">
+      </div>
+      
+      <div id="user-search-results" class="user-search-results"></div>
+      
+      <div id="selected-users" class="selected-users">
+        <h4>Selected Users</h4>
+        <div id="selected-list"></div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="modal-button" onclick="addSelectedUsersToDiv('${divisionId}')">Add to Division</button>
+        <button class="modal-button cancel-btn" onclick="this.closest('.modal').remove()">Cancel</button>
+        <div id="add-users-message"></div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  const searchInput = document.getElementById('user-search');
+  searchInput.addEventListener('input', () => searchUsers(searchInput.value));
+}
+
+async function searchUsers(query) {
+  if (!query || query.length < 2) {
+    document.getElementById('user-search-results').innerHTML = '';
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?or=(name.ilike.%${query}%,email.ilike.%${query}%)`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) throw new Error('Failed to search users');
+
+    const users = await res.json();
+    
+    let html = '<div class="user-list">';
+    if (users.length === 0) {
+      html += '<p class="no-results">No users found</p>';
+    } else {
+      html += users.map(u => `
+        <div class="user-item" onclick="toggleUserSelection('${u.id}', '${u.name || u.email}')">
+          <input type="checkbox" id="user-${u.id}" class="user-checkbox">
+          <label for="user-${u.id}">
+            <strong>${u.name || u.email}</strong>
+            <span class="user-email">${u.email}</span>
+          </label>
+        </div>
+      `).join('');
+    }
+    html += '</div>';
+    
+    document.getElementById('user-search-results').innerHTML = html;
+  } catch (err) {
+    document.getElementById('user-search-results').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+  }
+}
+
+const selectedUsers = new Map();
+
+function toggleUserSelection(userId, userName) {
+  const checkbox = document.getElementById(`user-${userId}`);
+  checkbox.checked = !checkbox.checked;
+  
+  if (checkbox.checked) {
+    selectedUsers.set(userId, userName);
+  } else {
+    selectedUsers.delete(userId);
+  }
+  
+  updateSelectedList();
+}
+
+function updateSelectedList() {
+  const list = document.getElementById('selected-list');
+  if (selectedUsers.size === 0) {
+    list.innerHTML = '<p class="no-selection">No users selected</p>';
+  } else {
+    list.innerHTML = Array.from(selectedUsers.entries()).map(([id, name]) => `
+      <div class="selected-item">
+        <span>${name}</span>
+        <button class="remove-btn" onclick="toggleUserSelection('${id}', '${name}')">Remove</button>
+      </div>
+    `).join('');
+  }
+}
+
+async function addSelectedUsersToDiv(divisionId) {
+  if (selectedUsers.size === 0) {
+    alert('Please select at least one user');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    
+    for (const [userId, _] of selectedUsers.entries()) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          division_id: divisionId,
+          user_id: userId,
+          draft_spot: null
+        })
+      });
+
+      if (!res.ok) {
+        const error = await res.text();
+        if (error.includes('duplicate')) {
+          console.warn(`User already in division`);
+        } else {
+          throw new Error(`Failed to add user`);
+        }
+      }
+    }
+
+    const messageEl = document.getElementById('add-users-message');
+    messageEl.textContent = `${selectedUsers.size} user(s) added successfully!`;
+    messageEl.style.color = '#16a34a';
+    messageEl.style.marginTop = '10px';
+
+    setTimeout(() => {
+      document.querySelector('.modal').remove();
+      selectedUsers.clear();
+      loadDivisionTeams(divisionId);
+    }, 1500);
+  } catch (err) {
+    const messageEl = document.getElementById('add-users-message');
+    messageEl.textContent = 'Error: ' + err.message;
+    messageEl.style.color = '#dc2626';
+    messageEl.style.marginTop = '10px';
   }
 }
 
