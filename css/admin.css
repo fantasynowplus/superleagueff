@@ -405,13 +405,25 @@
 
 .login-container input {
   width: 100%;
-  padding: 11px 12px;
+  padding: 10px 12px;
   border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 15px;
+  border-radius: 4px;
+  font-size: 16px;
   box-sizing: border-box;
   font-family: inherit;
-  transition: border-color 0.2s;
+  background: #FFFFFF;
+  color: #000000;
+}
+
+.login-container input::placeholder {
+  color: #999;
+}
+
+.login-container input:-webkit-autofill,
+.login-container input:-webkit-autofill:hover,
+.login-container input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px white inset !important;
+  -webkit-text-fill-color: #000000 !important;
 }
 
 .login-container input:focus {
