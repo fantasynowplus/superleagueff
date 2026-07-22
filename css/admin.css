@@ -777,3 +777,11 @@
 .modal-actions .reset-pwd-btn:hover {
   background: #c95d0a;
 }
+
+.modal-actions .danger-btn {
+  background: #dc2626;
+}
+
+.modal-actions .danger-btn:hover {
+  background: #991b1b;
+}
