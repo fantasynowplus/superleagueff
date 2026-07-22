@@ -885,7 +885,9 @@ async function searchUsers(query) {
   try {
     const token = localStorage.getItem('sb-auth-token');
     
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?or=(name.ilike.%${query}%,email.ilike.%${query}%)`, {
+    const searchTerm = `%${query}%`;
+    
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?name.ilike.${searchTerm}&limit=20`, {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${token}`,
@@ -894,14 +896,27 @@ async function searchUsers(query) {
 
     if (!res.ok) throw new Error('Failed to search users');
 
-    const users = await res.json();
+    let users = await res.json();
+    
+    const emailRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?email.ilike.${searchTerm}&limit=20`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (emailRes.ok) {
+      const emailUsers = await emailRes.json();
+      const userIds = new Set(users.map(u => u.id));
+      users = [...users, ...emailUsers.filter(u => !userIds.has(u.id))];
+    }
     
     let html = '<div class="user-list">';
     if (users.length === 0) {
       html += '<p class="no-results">No users found</p>';
     } else {
       html += users.map(u => `
-        <div class="user-item" onclick="toggleUserSelection('${u.id}', '${u.name || u.email}')">
+        <div class="user-item" onclick="toggleUserSelection('${u.id}', '${(u.name || u.email).replace(/'/g, "\\'")}')">
           <input type="checkbox" id="user-${u.id}" class="user-checkbox">
           <label for="user-${u.id}">
             <strong>${u.name || u.email}</strong>
@@ -914,7 +929,8 @@ async function searchUsers(query) {
     
     document.getElementById('user-search-results').innerHTML = html;
   } catch (err) {
-    document.getElementById('user-search-results').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+    console.error('Search error:', err);
+    document.getElementById('user-search-results').innerHTML = `<div class="error">Error searching users</div>`;
   }
 }
 
