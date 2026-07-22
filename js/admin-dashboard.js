@@ -548,6 +548,14 @@ async function filterLeagueDisplay(leagueId) {
 }
 
 async function displayLeagueDivisions(leagueId, leagueName) {
+  const stageNames = {
+    0: 'Pre-Draft',
+    1: 'League Filled',
+    2: 'League Linked',
+    3: 'Round 2',
+    4: 'Draft Completed'
+  };
+
   try {
     const token = localStorage.getItem('sb-auth-token');
     
@@ -574,7 +582,6 @@ async function displayLeagueDivisions(leagueId, leagueName) {
         <button class="filter-btn ${divisionsFilter === 'inactive' ? 'active' : ''}" onclick="applyDivisionsFilter('inactive')">Not Active</button>
         <button class="filter-btn ${divisionsFilter === 'sleeper' ? 'active' : ''}" onclick="applyDivisionsFilter('sleeper')">Sleeper</button>
         <button class="filter-btn ${divisionsFilter === 'mfl' ? 'active' : ''}" onclick="applyDivisionsFilter('mfl')">MFL</button>
-        <button class="filter-btn ${divisionsFilter === 'full' ? 'active' : ''}" onclick="applyDivisionsFilter('full')">League Full</button>
       </div>
       
       <div class="divisions-table-wrapper">
@@ -595,21 +602,25 @@ async function displayLeagueDivisions(leagueId, leagueName) {
             </tr>
           </thead>
           <tbody>
-            ${divisions.map(d => `
+            ${divisions.map(d => {
+              const hostPlatform = d.mfl_id ? 'MFL' : d.sleeper_id ? 'Sleeper' : '-';
+              const stageName = stageNames[d.league_stage] || `Stage ${d.league_stage}`;
+              return `
               <tr onclick="viewDivisionDetails('${d.id}')">
                 <td><strong>${d.division_name}</strong></td>
                 <td>${d.mfl_id || '-'}</td>
                 <td>${d.sleeper_id || '-'}</td>
                 <td>${d.draftboard_url ? `<a href="${d.draftboard_url}" target="_blank">View</a>` : '-'}</td>
                 <td><span class="badge ${d.is_active ? 'active' : 'inactive'}">${d.is_active ? 'Active' : 'Inactive'}</span></td>
-                <td>${d.host_id ? 'Set' : 'Not Set'}</td>
+                <td>${hostPlatform}</td>
                 <td>-</td>
                 <td>-</td>
-                <td>Stage ${d.league_stage || 0}</td>
+                <td>${stageName}</td>
                 <td>${d.invite_link ? `<a href="${d.invite_link}" target="_blank">Join</a>` : '-'}</td>
                 <td><button class="btn-action" onclick="event.stopPropagation(); editDivision('${d.id}')">Edit</button></td>
               </tr>
-            `).join('')}
+            `;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -667,6 +678,8 @@ async function editDivision(divisionId) {
 }
 
 function showEditDivisionModal(division) {
+  const hostPlatform = division.mfl_id ? 'MFL' : division.sleeper_id ? 'Sleeper' : 'Not Set';
+  
   const modal = document.createElement('div');
   modal.className = 'modal';
   modal.innerHTML = `
@@ -692,6 +705,12 @@ function showEditDivisionModal(division) {
       </div>
       
       <div class="form-group">
+        <label>Host Platform</label>
+        <div class="host-badge">${hostPlatform}</div>
+        <p class="host-note">Automatically detected from IDs above</p>
+      </div>
+      
+      <div class="form-group">
         <label for="div-draftboard">Draftboard URL</label>
         <input type="url" id="div-draftboard" placeholder="https://..." value="${division.draftboard_url || ''}">
       </div>
@@ -714,16 +733,10 @@ function showEditDivisionModal(division) {
           <label for="div-stage">League Stage</label>
           <select id="div-stage">
             <option value="0" ${division.league_stage === 0 ? 'selected' : ''}>Stage 0 - Pre-Draft</option>
-            <option value="1" ${division.league_stage === 1 ? 'selected' : ''}>Stage 1 - Regular</option>
-            <option value="2" ${division.league_stage === 2 ? 'selected' : ''}>Stage 2 - Playoffs</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="div-full">League Full</label>
-          <select id="div-full">
-            <option value="false" ${!division.league_full ? 'selected' : ''}>Not Full</option>
-            <option value="true" ${division.league_full ? 'selected' : ''}>Full</option>
+            <option value="1" ${division.league_stage === 1 ? 'selected' : ''}>Stage 1 - League Filled</option>
+            <option value="2" ${division.league_stage === 2 ? 'selected' : ''}>Stage 2 - League Linked</option>
+            <option value="3" ${division.league_stage === 3 ? 'selected' : ''}>Stage 3 - Round 2</option>
+            <option value="4" ${division.league_stage === 4 ? 'selected' : ''}>Stage 4 - Draft Completed</option>
           </select>
         </div>
       </div>
@@ -755,7 +768,6 @@ async function saveDivisionChanges(divisionId) {
     invite_link: document.getElementById('div-invite').value.trim() || null,
     is_active: document.getElementById('div-active').value === 'true',
     league_stage: parseInt(document.getElementById('div-stage').value),
-    league_full: document.getElementById('div-full').value === 'true',
     updated_at: new Date().toISOString()
   };
 
