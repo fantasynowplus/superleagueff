@@ -330,8 +330,6 @@ function showUserDetailModal(user) {
       <div class="modal-actions" id="modalActions">
         ${canEdit ? `
           <button class="modal-button" onclick="editUserProfile('${user.id}')">Edit Profile</button>
-          <button class="modal-button reset-pwd-btn" onclick="resetUserPassword('${user.email}')">Send Reset Email</button>
-        ` : ''}
       </div>
     </div>
   `;
