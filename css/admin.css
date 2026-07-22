@@ -1030,3 +1030,160 @@ body {
     max-width: 95vw;
   }
 }
+
+.divisions-view {
+  background: #0a1f2e;
+  border: 2px solid #1a4d6f;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.divisions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #1a4d6f;
+}
+
+.divisions-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #fff;
+}
+
+.divisions-header p {
+  margin: 0;
+  font-size: 12px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.division-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  background: #1a4d6f;
+  color: #aaa;
+  border: 1px solid #1a4d6f;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background: #2a6d9f;
+  color: #e26f0f;
+}
+
+.filter-btn.active {
+  background: #e26f0f;
+  color: #000;
+  border-color: #e26f0f;
+}
+
+.divisions-table-wrapper {
+  overflow-x: auto;
+}
+
+.divisions-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #0a1f2e;
+}
+
+.divisions-table thead {
+  background: #1a4d6f;
+  position: sticky;
+  top: 0;
+}
+
+.divisions-table th {
+  padding: 12px 15px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e26f0f;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #1a4d6f;
+  white-space: nowrap;
+}
+
+.divisions-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #1a4d6f;
+  font-size: 13px;
+  color: #fff;
+}
+
+.divisions-table tbody tr {
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.divisions-table tbody tr:hover {
+  background: rgba(226, 111, 15, 0.05);
+}
+
+.divisions-table strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.divisions-table a {
+  color: #e26f0f;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.divisions-table a:hover {
+  text-decoration: underline;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge.active {
+  background: #16a34a;
+  color: #fff;
+}
+
+.badge.inactive {
+  background: #333;
+  color: #ccc;
+}
+
+.btn-action {
+  padding: 4px 10px;
+  background: #e26f0f;
+  color: #000;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-action:hover {
+  background: #c95d0a;
+}
