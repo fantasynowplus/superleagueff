@@ -769,3 +769,11 @@
 .modal-actions .cancel-btn:hover {
   background: #555;
 }
+
+.modal-actions .reset-pwd-btn {
+  background: #e26f0f;
+}
+
+.modal-actions .reset-pwd-btn:hover {
+  background: #c95d0a;
+}
