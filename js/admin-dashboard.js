@@ -226,7 +226,7 @@ async function fetchLeagueHistory(userIds) {
   const token = localStorage.getItem('sb-auth-token');
 
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/league_history?user_id=in.(${userIds.join(',')})&select=user_id,leagues(id,league_name,year)`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/league_history?user_id=in.(${userIds.join(',')})&select=user_id,status,leagues(id,league_name,year)`, {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${token}`,
@@ -244,7 +244,12 @@ async function fetchLeagueHistory(userIds) {
     rows.forEach(row => {
       if (!row.leagues) return;
       if (!map[row.user_id]) map[row.user_id] = [];
-      map[row.user_id].push(row.leagues);
+      map[row.user_id].push({
+        id: row.leagues.id,
+        league_name: row.leagues.league_name,
+        year: row.leagues.year,
+        status: row.status
+      });
     });
 
     Object.keys(map).forEach(userId => {
@@ -258,12 +263,17 @@ async function fetchLeagueHistory(userIds) {
   }
 }
 
-function formatLeagueHistory(leagues) {
-  if (!leagues || leagues.length === 0) return '-';
-  return `<div class="history-cell">${leagues.map(l => `<span class="badge history">${l.league_name}</span>`).join('')}</div>`;
+function formatLeagueHistory(entries) {
+  if (!entries || entries.length === 0) return '-';
+
+  return `<div class="history-cell">${entries.map(e => {
+    const rostered = e.status === 'rostered';
+    const title = rostered ? 'Rostered in a division' : 'Registered, no division';
+    return `<span class="badge history ${rostered ? 'rostered' : 'waitlist'}" title="${title}">${e.league_name}</span>`;
+  }).join('')}</div>`;
 }
 
-async function recordLeagueHistory(userId, leagueId) {
+async function recordLeagueHistory(userId, leagueId, status, resolution) {
   if (!userId || !leagueId) return;
 
   const token = localStorage.getItem('sb-auth-token');
@@ -274,17 +284,56 @@ async function recordLeagueHistory(userId, leagueId) {
       'Content-Type': 'application/json',
       'apikey': SUPABASE_ANON_KEY,
       'Authorization': `Bearer ${token}`,
-      'Prefer': 'resolution=ignore-duplicates,return=minimal'
+      'Prefer': `resolution=${resolution || 'merge-duplicates'},return=minimal`
     },
     body: JSON.stringify({
       user_id: userId,
-      league_id: leagueId
+      league_id: leagueId,
+      status: status || 'rostered'
     })
   });
 
   if (!res.ok) {
     throw new Error(`League history update failed (${res.status}): ${await res.text()}`);
   }
+}
+
+async function setLeagueHistoryStatus(userId, leagueId, status) {
+  const token = localStorage.getItem('sb-auth-token');
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/league_history?user_id=eq.${userId}&league_id=eq.${leagueId}&select=id`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token}`,
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({ status })
+  });
+
+  if (!res.ok) {
+    throw new Error(`League history status change failed (${res.status}): ${await res.text()}`);
+  }
+}
+
+async function userStillInLeague(userId, leagueId) {
+  const token = localStorage.getItem('sb-auth-token');
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members?user_id=eq.${userId}&select=id,divisions(league_id)`, {
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token}`,
+    }
+  });
+
+  if (!res.ok) {
+    console.error('Failed to check remaining divisions:', res.status, await res.text());
+    return true;
+  }
+
+  const rows = await res.json();
+  return rows.some(r => r.divisions && r.divisions.league_id === leagueId);
 }
 
 async function viewUserProfile(userId) {
@@ -702,7 +751,12 @@ function renderDivisionsView() {
         <h2>${window.currentLeagueName} Divisions</h2>
         <p>${countText}</p>
       </div>
-      ${adminLevel >= 7 ? `<button class="section-button" onclick="showCreateDivisionModal()">+ Create New Division</button>` : ''}
+      ${adminLevel >= 7 ? `
+        <div class="divisions-header-actions">
+          <button class="section-button" onclick="showWaitlistModal()">Waitlist</button>
+          <button class="section-button" onclick="showCreateDivisionModal()">+ Create New Division</button>
+        </div>
+      ` : ''}
     </div>
 
     <div class="division-filters">
@@ -1326,7 +1380,7 @@ async function syncProfileWithDivision(userId, divisionId, draftSpot) {
   const rows = await profileRes.json();
   if (rows.length === 0) throw new Error('Profile update affected 0 rows — RLS is blocking the write.');
 
-  await recordLeagueHistory(userId, division.league_id);
+  await recordLeagueHistory(userId, division.league_id, 'rostered', 'merge-duplicates');
 
   return rows[0];
 }
@@ -1338,7 +1392,20 @@ async function removeUserFromDivision(memberId, divisionId, userName, userId) {
 
   try {
     const token = localStorage.getItem('sb-auth-token');
-    
+
+    let leagueId = null;
+    const divLookup = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}&select=league_id`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (divLookup.ok) {
+      const divRows = await divLookup.json();
+      if (divRows.length > 0) leagueId = divRows[0].league_id;
+    }
+
     const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members?id=eq.${memberId}`, {
       method: 'DELETE',
       headers: {
@@ -1350,6 +1417,17 @@ async function removeUserFromDivision(memberId, divisionId, userName, userId) {
     if (!res.ok) {
       const error = await res.text();
       throw new Error(`Failed to remove user: ${error}`);
+    }
+
+    if (leagueId) {
+      try {
+        const stillIn = await userStillInLeague(userId, leagueId);
+        if (!stillIn) {
+          await setLeagueHistoryStatus(userId, leagueId, 'waitlist');
+        }
+      } catch (err) {
+        console.error('Failed to downgrade league history to waitlist:', err);
+      }
     }
 
     const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=id`, {
@@ -1595,6 +1673,166 @@ async function saveDivisionChanges(divisionId) {
     messageEl.style.color = '#dc2626';
     messageEl.style.marginTop = '10px';
   }
+}
+
+function showWaitlistModal() {
+  const adminLevel = currentProfile.admin_level || 0;
+
+  if (adminLevel < 7) {
+    alert('You do not have permission to manage the waitlist.');
+    return;
+  }
+
+  if (!window.currentLeagueId) {
+    alert('Select a league first.');
+    return;
+  }
+
+  selectedUsers.clear();
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content add-users-modal">
+      <button class="modal-close" onclick="closeWaitlistModal()">✕</button>
+      <h3>${window.currentLeagueName} Waitlist</h3>
+      <p class="host-note">Registered for this season but not rostered in a division</p>
+
+      <div id="waitlist-current" class="waitlist-current"><div class="loading">Loading waitlist...</div></div>
+
+      <div class="form-group">
+        <label for="user-search">Add Users to Waitlist</label>
+        <input type="text" id="user-search" placeholder="Search by name or email...">
+      </div>
+
+      <div id="user-search-results" class="user-search-results"></div>
+
+      <div id="selected-users" class="selected-users">
+        <h4>Selected Users</h4>
+        <div id="selected-list"></div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-button" onclick="addSelectedUsersToWaitlist()">Add to Waitlist</button>
+        <button class="modal-button cancel-btn" onclick="closeWaitlistModal()">Close</button>
+        <div id="add-users-message"></div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const searchInput = document.getElementById('user-search');
+  searchInput.addEventListener('input', () => searchUsers(searchInput.value));
+
+  loadWaitlist();
+}
+
+function closeWaitlistModal() {
+  selectedUsers.clear();
+  const modal = document.querySelector('.modal');
+  if (modal) modal.remove();
+}
+
+async function loadWaitlist() {
+  const container = document.getElementById('waitlist-current');
+  if (!container) return;
+
+  const token = localStorage.getItem('sb-auth-token');
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/league_history?league_id=eq.${window.currentLeagueId}&status=eq.waitlist&select=id,profiles(id,name,email)`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) throw new Error(`Failed to load waitlist (${res.status})`);
+
+    const rows = await res.json();
+
+    if (rows.length === 0) {
+      container.innerHTML = '<p class="empty">Nobody is waitlisted for this league</p>';
+      return;
+    }
+
+    container.innerHTML = `
+      <h4>Currently Waitlisted (${rows.length})</h4>
+      ${rows.map(r => `
+        <div class="waitlist-row">
+          <span>${r.profiles ? (r.profiles.name || r.profiles.email) : 'Unknown user'}</span>
+          <button class="btn-remove" onclick="removeFromWaitlist('${r.id}')">Remove</button>
+        </div>
+      `).join('')}
+    `;
+  } catch (err) {
+    container.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+async function removeFromWaitlist(historyId) {
+  const token = localStorage.getItem('sb-auth-token');
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/league_history?id=eq.${historyId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) throw new Error(`Failed to remove (${res.status}): ${await res.text()}`);
+
+    loadWaitlist();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+async function addSelectedUsersToWaitlist() {
+  if (selectedUsers.size === 0) {
+    alert('Please select at least one user');
+    return;
+  }
+
+  const button = document.querySelector('.modal-actions .modal-button:not(.cancel-btn)');
+  button.disabled = true;
+  button.style.opacity = '0.6';
+
+  const messageEl = document.getElementById('add-users-message');
+  const errors = [];
+  let successCount = 0;
+
+  for (const [userId, userName] of selectedUsers.entries()) {
+    try {
+      await recordLeagueHistory(userId, window.currentLeagueId, 'waitlist', 'ignore-duplicates');
+      successCount++;
+    } catch (err) {
+      console.error('Waitlist add failed for', userName, err);
+      errors.push(`${userName}: ${err.message}`);
+    }
+  }
+
+  button.disabled = false;
+  button.style.opacity = '1';
+
+  messageEl.style.marginTop = '10px';
+
+  if (errors.length === 0) {
+    messageEl.textContent = `Added ${successCount} user(s) to the waitlist`;
+    messageEl.style.color = '#16a34a';
+  } else {
+    messageEl.textContent = `Added ${successCount}. Issues: ${errors.join(', ')}`;
+    messageEl.style.color = '#f59e0b';
+  }
+
+  selectedUsers.clear();
+  updateSelectedList();
+  document.getElementById('user-search').value = '';
+  document.getElementById('user-search-results').innerHTML = '';
+  loadWaitlist();
 }
 
 function showCreateDivisionModal() {
