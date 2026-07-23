@@ -1,6 +1,7 @@
 let currentUser = null;
 let currentProfile = null;
 let divisionsFilter = 'all';
+let divisionsStageFilter = 'all';
 
 async function initAdmin() {
   if (!auth.isAuthenticated()) {
@@ -622,18 +623,22 @@ async function filterLeagueDisplay(leagueId) {
   }
 }
 
-async function displayLeagueDivisions(leagueId, leagueName) {
-  const stageNames = {
-    0: 'Pre-Draft',
-    1: 'League Filled',
-    2: 'League Linked',
-    3: 'Round 2',
-    4: 'Draft Completed'
-  };
+const STAGE_NAMES = {
+  0: 'Pre-Draft',
+  1: 'League Filled',
+  2: 'League Linked',
+  3: 'Round 2',
+  4: 'Draft Completed'
+};
 
+function getHostPlatform(division) {
+  return division.mfl_id ? 'MFL' : division.sleeper_id ? 'Sleeper' : '-';
+}
+
+async function displayLeagueDivisions(leagueId, leagueName) {
   try {
     const token = localStorage.getItem('sb-auth-token');
-    
+
     const res = await fetch(`${SUPABASE_URL}/rest/v1/divisions?league_id=eq.${leagueId}&order=division_name.asc`, {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
@@ -643,76 +648,137 @@ async function displayLeagueDivisions(leagueId, leagueName) {
 
     if (!res.ok) throw new Error('Failed to load divisions');
 
-    const divisions = await res.json();
-    
-    let html = `
-      <div class="divisions-header">
-        <h2>${leagueName} Divisions</h2>
-        <p>${divisions.length} divisions</p>
-      </div>
-      
-      <div class="division-filters">
-        <button class="filter-btn ${divisionsFilter === 'all' ? 'active' : ''}" onclick="applyDivisionsFilter('all')">All Divisions</button>
-        <button class="filter-btn ${divisionsFilter === 'active' ? 'active' : ''}" onclick="applyDivisionsFilter('active')">Active</button>
-        <button class="filter-btn ${divisionsFilter === 'inactive' ? 'active' : ''}" onclick="applyDivisionsFilter('inactive')">Not Active</button>
-        <button class="filter-btn ${divisionsFilter === 'sleeper' ? 'active' : ''}" onclick="applyDivisionsFilter('sleeper')">Sleeper</button>
-        <button class="filter-btn ${divisionsFilter === 'mfl' ? 'active' : ''}" onclick="applyDivisionsFilter('mfl')">MFL</button>
-      </div>
-      
-      <div class="divisions-table-wrapper">
-        <table class="divisions-table">
-          <thead>
-            <tr>
-              <th>Division Name</th>
-              <th>MFLID</th>
-              <th>SLEEPER ID</th>
-              <th>Draftboard</th>
-              <th>Active</th>
-              <th>Host</th>
-              <th>Entrants</th>
-              <th>Logged In</th>
-              <th>Stage</th>
-              <th>Invite Link</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${divisions.map(d => {
-              const hostPlatform = d.mfl_id ? 'MFL' : d.sleeper_id ? 'Sleeper' : '-';
-              const stageName = stageNames[d.league_stage] || `Stage ${d.league_stage}`;
-              return `
-              <tr>
-                <td><strong><a class="division-link" onclick="viewDivisionDetails('${d.id}')">${d.division_name}</a></strong></td>
-                <td>${d.mfl_id || '-'}</td>
-                <td>${d.sleeper_id || '-'}</td>
-                <td>${d.draftboard_url ? `<a href="${d.draftboard_url}" target="_blank">View</a>` : '-'}</td>
-                <td><span class="badge ${d.is_active ? 'active' : 'inactive'}">${d.is_active ? 'Active' : 'Inactive'}</span></td>
-                <td>${hostPlatform}</td>
-                <td>-</td>
-                <td>-</td>
-                <td>${stageName}</td>
-                <td>${d.invite_link ? `<a href="${d.invite_link}" target="_blank">Join</a>` : '-'}</td>
-                <td><button class="btn-action" onclick="editDivisionModal('${d.id}')">Edit</button></td>
-              </tr>
-            `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-    
-    document.getElementById('divisionsView').innerHTML = html;
+    window.currentDivisions = await res.json();
+    window.currentLeagueId = leagueId;
+    window.currentLeagueName = leagueName;
+
+    renderDivisionsView();
   } catch (err) {
     console.error('Error loading divisions:', err);
     document.getElementById('divisionsView').innerHTML = `<div class="error">Error: ${err.message}</div>`;
   }
 }
 
+function filterDivisions(divisions) {
+  return divisions.filter(d => {
+    if (divisionsFilter === 'active' && !d.is_active) return false;
+    if (divisionsFilter === 'inactive' && d.is_active) return false;
+    if (divisionsFilter === 'sleeper' && getHostPlatform(d) !== 'Sleeper') return false;
+    if (divisionsFilter === 'mfl' && getHostPlatform(d) !== 'MFL') return false;
+    if (divisionsStageFilter !== 'all' && d.league_stage !== parseInt(divisionsStageFilter)) return false;
+    return true;
+  });
+}
+
+function renderDivisionsView() {
+  const adminLevel = currentProfile.admin_level || 0;
+  const divisions = window.currentDivisions || [];
+  const visible = filterDivisions(divisions);
+
+  const statusFilters = [
+    ['all', 'All Divisions'],
+    ['active', 'Active'],
+    ['inactive', 'Not Active'],
+    ['sleeper', 'Sleeper'],
+    ['mfl', 'MFL']
+  ];
+
+  const stageFilters = [
+    ['all', 'All Stages'],
+    ['0', 'Stage 0'],
+    ['1', 'Stage 1'],
+    ['2', 'Stage 2'],
+    ['3', 'Stage 3'],
+    ['4', 'Stage 4']
+  ];
+
+  const countText = visible.length === divisions.length
+    ? `${divisions.length} divisions`
+    : `${visible.length} of ${divisions.length} divisions`;
+
+  let html = `
+    <div class="divisions-header">
+      <div>
+        <h2>${window.currentLeagueName} Divisions</h2>
+        <p>${countText}</p>
+      </div>
+      ${adminLevel >= 7 ? `<button class="section-button" onclick="showCreateDivisionModal()">+ Create New Division</button>` : ''}
+    </div>
+
+    <div class="division-filters">
+      ${statusFilters.map(([value, label]) => `
+        <button class="filter-btn ${divisionsFilter === value ? 'active' : ''}" onclick="applyDivisionsFilter('${value}')">${label}</button>
+      `).join('')}
+    </div>
+
+    <div class="division-filters">
+      ${stageFilters.map(([value, label]) => `
+        <button class="filter-btn ${divisionsStageFilter === value ? 'active' : ''}" onclick="applyStageFilter('${value}')">${label}</button>
+      `).join('')}
+    </div>
+  `;
+
+  if (visible.length === 0) {
+    html += divisions.length === 0
+      ? '<div class="empty-state">No divisions in this league yet</div>'
+      : '<div class="empty-state">No divisions match these filters</div>';
+    document.getElementById('divisionsView').innerHTML = html;
+    return;
+  }
+
+  html += `
+    <div class="divisions-table-wrapper">
+      <table class="divisions-table">
+        <thead>
+          <tr>
+            <th>Division Name</th>
+            <th>MFLID</th>
+            <th>SLEEPER ID</th>
+            <th>Draftboard</th>
+            <th>Active</th>
+            <th>Host</th>
+            <th>Entrants</th>
+            <th>Logged In</th>
+            <th>Stage</th>
+            <th>Invite Link</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${visible.map(d => {
+            const stageName = STAGE_NAMES[d.league_stage] || `Stage ${d.league_stage}`;
+            return `
+            <tr>
+              <td><strong><a class="division-link" onclick="viewDivisionDetails('${d.id}')">${d.division_name}</a></strong></td>
+              <td>${d.mfl_id || '-'}</td>
+              <td>${d.sleeper_id || '-'}</td>
+              <td>${d.draftboard_url ? `<a href="${d.draftboard_url}" target="_blank">View</a>` : '-'}</td>
+              <td><span class="badge ${d.is_active ? 'active' : 'inactive'}">${d.is_active ? 'Active' : 'Inactive'}</span></td>
+              <td>${getHostPlatform(d)}</td>
+              <td>-</td>
+              <td>-</td>
+              <td>${stageName}</td>
+              <td>${d.invite_link ? `<a href="${d.invite_link}" target="_blank">Join</a>` : '-'}</td>
+              <td><button class="btn-action" onclick="editDivisionModal('${d.id}')">Edit</button></td>
+            </tr>
+          `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById('divisionsView').innerHTML = html;
+}
+
 function applyDivisionsFilter(filter) {
   divisionsFilter = filter;
-  const buttons = document.querySelectorAll('.filter-btn');
-  buttons.forEach(btn => btn.classList.remove('active'));
-  event.target.classList.add('active');
+  renderDivisionsView();
+}
+
+function applyStageFilter(stage) {
+  divisionsStageFilter = stage;
+  renderDivisionsView();
 }
 
 async function viewDivisionDetails(divisionId) {
@@ -1525,6 +1591,156 @@ async function saveDivisionChanges(divisionId) {
     button.disabled = false;
     button.style.opacity = '1';
     const messageEl = document.getElementById('division-edit-message');
+    messageEl.textContent = 'Error: ' + err.message;
+    messageEl.style.color = '#dc2626';
+    messageEl.style.marginTop = '10px';
+  }
+}
+
+function showCreateDivisionModal() {
+  const adminLevel = currentProfile.admin_level || 0;
+
+  if (adminLevel < 7) {
+    alert('You do not have permission to create divisions.');
+    return;
+  }
+
+  if (!window.currentLeagueId) {
+    alert('Select a league first.');
+    return;
+  }
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content division-modal">
+      <button class="modal-close" onclick="this.closest('.modal').remove()">✕</button>
+      <h3>Create Division in ${window.currentLeagueName}</h3>
+
+      <div class="form-group">
+        <label for="new-div-name">Division Name</label>
+        <input type="text" id="new-div-name" placeholder="e.g. Division 5">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="new-div-mfl">MFL ID</label>
+          <input type="text" id="new-div-mfl">
+        </div>
+
+        <div class="form-group">
+          <label for="new-div-sleeper">Sleeper ID</label>
+          <input type="text" id="new-div-sleeper">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="new-div-draftboard">Draftboard URL</label>
+        <input type="url" id="new-div-draftboard" placeholder="https://...">
+      </div>
+
+      <div class="form-group">
+        <label for="new-div-invite">Invite Link</label>
+        <input type="url" id="new-div-invite" placeholder="https://...">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="new-div-active">Status</label>
+          <select id="new-div-active">
+            <option value="true" selected>Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="new-div-stage">League Stage</label>
+          <select id="new-div-stage">
+            <option value="0" selected>Stage 0 - Pre-Draft</option>
+            <option value="1">Stage 1 - League Filled</option>
+            <option value="2">Stage 2 - League Linked</option>
+            <option value="3">Stage 3 - Round 2</option>
+            <option value="4">Stage 4 - Draft Completed</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-button" onclick="saveNewDivision()">Create Division</button>
+        <button class="modal-button cancel-btn" onclick="this.closest('.modal').remove()">Cancel</button>
+        <div id="division-create-message"></div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+async function saveNewDivision() {
+  const adminLevel = currentProfile.admin_level || 0;
+
+  if (adminLevel < 7) {
+    alert('You do not have permission to create divisions.');
+    return;
+  }
+
+  const division = {
+    league_id: window.currentLeagueId,
+    division_name: document.getElementById('new-div-name').value.trim(),
+    mfl_id: document.getElementById('new-div-mfl').value.trim() || null,
+    sleeper_id: document.getElementById('new-div-sleeper').value.trim() || null,
+    draftboard_url: document.getElementById('new-div-draftboard').value.trim() || null,
+    invite_link: document.getElementById('new-div-invite').value.trim() || null,
+    is_active: document.getElementById('new-div-active').value === 'true',
+    league_stage: parseInt(document.getElementById('new-div-stage').value)
+  };
+
+  if (!division.division_name) {
+    alert('Division name is required');
+    return;
+  }
+
+  const button = document.querySelector('.modal-actions .modal-button:not(.cancel-btn)');
+  button.disabled = true;
+  button.style.opacity = '0.6';
+
+  const messageEl = document.getElementById('division-create-message');
+
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/divisions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(division)
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to create division (${res.status}): ${await res.text()}`);
+    }
+
+    const created = await res.json();
+    if (created.length === 0) {
+      throw new Error('Division insert affected 0 rows — RLS is blocking the write.');
+    }
+
+    messageEl.textContent = 'Division created!';
+    messageEl.style.color = '#16a34a';
+    messageEl.style.marginTop = '10px';
+
+    setTimeout(() => {
+      document.querySelector('.modal').remove();
+      displayLeagueDivisions(window.currentLeagueId, window.currentLeagueName);
+    }, 1200);
+  } catch (err) {
+    console.error('Error creating division:', err);
+    button.disabled = false;
+    button.style.opacity = '1';
     messageEl.textContent = 'Error: ' + err.message;
     messageEl.style.color = '#dc2626';
     messageEl.style.marginTop = '10px';
