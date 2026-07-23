@@ -183,6 +183,8 @@ async function loadAllUsers() {
       users = users.filter(u => u.assigned_division);
     }
 
+    const historyMap = await fetchLeagueHistory(users.map(u => u.id));
+
     const html = `
       <table class="users-table">
         <thead>
@@ -190,6 +192,7 @@ async function loadAllUsers() {
             <th>Name</th>
             <th>Email</th>
             <th>Division</th>
+            <th>SLFF History</th>
             <th>Sleeper Handle</th>
             <th>MFL Handle</th>
           </tr>
@@ -200,6 +203,7 @@ async function loadAllUsers() {
               <td>${adminLevel >= 7 ? `<a class="user-link">${u.name || '(not set)'}</a>` : (u.name || '(not set)')}</td>
               <td>${u.email}</td>
               <td>${u.assigned_division || '-'}</td>
+              <td>${formatLeagueHistory(historyMap[u.id])}</td>
               <td>${u.sleeper_handle || '-'}</td>
               <td>${u.mfl_handle || '-'}</td>
             </tr>
@@ -212,6 +216,73 @@ async function loadAllUsers() {
   } catch (err) {
     console.error('Error loading users:', err);
     document.getElementById('usersContent').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+  }
+}
+
+async function fetchLeagueHistory(userIds) {
+  if (!userIds || userIds.length === 0) return {};
+
+  const token = localStorage.getItem('sb-auth-token');
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/league_history?user_id=in.(${userIds.join(',')})&select=user_id,leagues(id,league_name,year)`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) {
+      console.error('Failed to load league history:', res.status, await res.text());
+      return {};
+    }
+
+    const rows = await res.json();
+    const map = {};
+
+    rows.forEach(row => {
+      if (!row.leagues) return;
+      if (!map[row.user_id]) map[row.user_id] = [];
+      map[row.user_id].push(row.leagues);
+    });
+
+    Object.keys(map).forEach(userId => {
+      map[userId].sort((a, b) => (b.year || 0) - (a.year || 0));
+    });
+
+    return map;
+  } catch (err) {
+    console.error('Error loading league history:', err);
+    return {};
+  }
+}
+
+function formatLeagueHistory(leagues) {
+  if (!leagues || leagues.length === 0) return '-';
+  return `<div class="history-cell">${leagues.map(l => `<span class="badge history">${l.league_name}</span>`).join('')}</div>`;
+}
+
+async function recordLeagueHistory(userId, leagueId) {
+  if (!userId || !leagueId) return;
+
+  const token = localStorage.getItem('sb-auth-token');
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/league_history?on_conflict=user_id,league_id`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token}`,
+      'Prefer': 'resolution=ignore-duplicates,return=minimal'
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      league_id: leagueId
+    })
+  });
+
+  if (!res.ok) {
+    throw new Error(`League history update failed (${res.status}): ${await res.text()}`);
   }
 }
 
@@ -243,13 +314,14 @@ async function viewUserProfile(userId) {
     }
 
     const user = data[0];
-    showUserDetailModal(user);
+    const historyMap = await fetchLeagueHistory([userId]);
+    showUserDetailModal(user, historyMap[userId]);
   } catch (err) {
     alert('Error loading profile: ' + err.message);
   }
 }
 
-function showUserDetailModal(user) {
+function showUserDetailModal(user, leagueHistory) {
   const adminLevel = currentProfile.admin_level || 0;
   const canEdit = adminLevel >= 7;
   
@@ -304,6 +376,10 @@ function showUserDetailModal(user) {
         <div class="profile-item">
           <label>Assigned Division</label>
           <p data-field="assigned_division">${user.assigned_division || '-'}</p>
+        </div>
+        <div class="profile-item profile-item-wide">
+          <label>SLFF History</label>
+          <p>${formatLeagueHistory(leagueHistory)}</p>
         </div>
         <div class="profile-item">
           <label>Draft Spot</label>
@@ -1183,6 +1259,8 @@ async function syncProfileWithDivision(userId, divisionId, draftSpot) {
 
   const rows = await profileRes.json();
   if (rows.length === 0) throw new Error('Profile update affected 0 rows — RLS is blocking the write.');
+
+  await recordLeagueHistory(userId, division.league_id);
 
   return rows[0];
 }
