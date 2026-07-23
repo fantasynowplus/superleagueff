@@ -15,7 +15,7 @@ jobs:
       
       - name: Fetch standings from Apps Script
         run: |
-          curl -L -s "https://script.google.com/macros/s/AKfycbxXmMXZChK1MbVRnQmhOXEF0LwsuseZnLcBBDkNJljOIQRJ35z6MUiIyWzaFqnbTewQbg/exec" \
+          curl -L -s "https://script.google.com/macros/s/AKfycbw-_FgNgnom-K33Y-RnFdb6gLhkWROZr2SlkMNDnJlnvQPI5VJBzT3gneRVk_yPgwYf6Q/exec" \
             -o data/standings.json
       
       - name: Commit if changed
