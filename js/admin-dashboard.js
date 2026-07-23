@@ -1139,7 +1139,6 @@ async function updateDraftSpot(memberId, divisionId, userId, currentSpot) {
       alert(`Draft spot saved on the roster, but the profile did not sync: ${err.message}`);
     }
     loadDivisionTeams(divisionId);
-    alert('Draft spot updated!');
   } catch (err) {
     alert('Error: ' + err.message);
   }
@@ -1210,23 +1209,38 @@ async function removeUserFromDivision(memberId, divisionId, userName, userId) {
       throw new Error(`Failed to remove user: ${error}`);
     }
 
-    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=id`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${token}`,
+        'Prefer': 'return=representation'
       },
       body: JSON.stringify({
         assigned_league_id: null,
         assigned_league: null,
+        assigned_division_id: null,
+        assigned_division: null,
         draft_spot: null,
         updated_at: new Date().toISOString()
       })
     });
 
     if (!profileRes.ok) {
-      console.error('Failed to clear profile assignment');
+      const error = await profileRes.text();
+      console.error('Failed to clear profile assignment', profileRes.status, error);
+      alert(`${userName} was removed from the division, but their profile did not clear (${profileRes.status}): ${error}`);
+      loadDivisionTeams(divisionId);
+      return;
+    }
+
+    const clearedRows = await profileRes.json();
+    if (clearedRows.length === 0) {
+      console.error('Profile clear affected 0 rows — RLS is blocking the write.');
+      alert(`${userName} was removed from the division, but their profile did not clear — RLS is blocking the write.`);
+      loadDivisionTeams(divisionId);
+      return;
     }
 
     alert(`${userName} has been removed from the division`);
