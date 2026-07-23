@@ -1148,8 +1148,8 @@ async function loadDivisionTeams(divisionId) {
                 <td>${member.roster_id || '-'}</td>
                 <td>
                   <div class="sleeper-cell">
-                    <span id="sleeper-${member.id}">${profile.sleeper_handle || '-'}</span>
                     ${adminLevel >= 4 ? `<button class="btn-inline-update" onclick="updateSleeperHandle('${member.id}', '${profile.id}')">✎</button>` : ''}
+                    <span id="sleeper-${member.id}">${profile.sleeper_handle || '-'}</span>
                   </div>
                 </td>
                 <td>
