@@ -180,7 +180,7 @@ async function loadAllUsers() {
     }
 
     if (adminLevel === 1) {
-      users = users.filter(u => u.assigned_league);
+      users = users.filter(u => u.assigned_division);
     }
 
     const html = `
@@ -189,7 +189,7 @@ async function loadAllUsers() {
           <tr>
             <th>Name</th>
             <th>Email</th>
-            <th>League</th>
+            <th>Division</th>
             <th>Sleeper Handle</th>
             <th>MFL Handle</th>
           </tr>
@@ -199,7 +199,7 @@ async function loadAllUsers() {
             <tr ${adminLevel >= 7 ? `onclick="viewUserProfile('${u.id}')"` : ''}>
               <td>${adminLevel >= 7 ? `<a class="user-link">${u.name || '(not set)'}</a>` : (u.name || '(not set)')}</td>
               <td>${u.email}</td>
-              <td>${u.assigned_league || '-'}</td>
+              <td>${u.assigned_division || '-'}</td>
               <td>${u.sleeper_handle || '-'}</td>
               <td>${u.mfl_handle || '-'}</td>
             </tr>
@@ -302,8 +302,8 @@ function showUserDetailModal(user) {
           <p data-field="mfl_handle">${user.mfl_handle || '-'}</p>
         </div>
         <div class="profile-item">
-          <label>Assigned League</label>
-          <p data-field="assigned_league">${user.assigned_league || '-'}</p>
+          <label>Assigned Division</label>
+          <p data-field="assigned_division">${user.assigned_division || '-'}</p>
         </div>
         <div class="profile-item">
           <label>Draft Spot</label>
@@ -350,7 +350,6 @@ function editUserProfile(userId) {
     discord_handle: 'Discord',
     sleeper_handle: 'Sleeper Handle',
     mfl_handle: 'MFL Handle',
-    assigned_league: 'Assigned League',
     draft_spot: 'Draft Spot',
     admin_level: 'Admin Level',
     is_verified: 'Verified'
@@ -419,7 +418,7 @@ async function saveUserChanges(userId) {
   }
 
   const updates = {};
-  const fields = ['name', 'cell_phone', 'location', 'x_handle', 'bluesky_handle', 'discord_handle', 'sleeper_handle', 'mfl_handle', 'assigned_league', 'draft_spot', 'admin_level', 'is_verified'];
+  const fields = ['name', 'cell_phone', 'location', 'x_handle', 'bluesky_handle', 'discord_handle', 'sleeper_handle', 'mfl_handle', 'draft_spot', 'admin_level', 'is_verified'];
 
   fields.forEach(field => {
     const input = document.getElementById(`edit-${field}`);
