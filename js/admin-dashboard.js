@@ -739,7 +739,8 @@ async function fetchSleeperUsernames(sleeperLeagueId) {
     const users = await res.json();
     const names = new Set(
       (users || [])
-        .map(u => (u.username || '').trim().toLowerCase())
+        .flatMap(u => [u.username, u.display_name])
+        .map(v => (v || '').trim().toLowerCase())
         .filter(Boolean)
     );
 
@@ -1135,8 +1136,9 @@ async function loadDivisionTeams(divisionId) {
               : `<strong>${member.draft_spot || '-'}</strong>`;
             
             const handle = profile.sleeper_handle ? profile.sleeper_handle.trim() : '';
+            const checkFailed = !sleeperUsernames;
             const linked = !!(sleeperUsernames && handle && sleeperUsernames.has(handle.toLowerCase()));
-            const statusDisplay = linked ? 'LINKED' : 'Not Logged In';
+            const statusDisplay = checkFailed ? 'Unknown' : (linked ? 'LINKED' : 'Not Logged In');
             const statusBadgeClass = linked ? 'active' : 'inactive';
             
             return `
