@@ -1565,3 +1565,19 @@ body {
     padding: 8px 10px;
   }
 }
+
+.badge.history {
+  background: rgba(226, 111, 15, 0.15);
+  border: 1px solid #e26f0f;
+  color: #e26f0f;
+}
+
+.history-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.profile-item-wide {
+  grid-column: 1 / -1;
+}
