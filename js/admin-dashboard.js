@@ -719,6 +719,105 @@ function filterDivisions(divisions) {
   });
 }
 
+const sleeperUserCache = new Map();
+
+async function fetchSleeperUsernames(sleeperLeagueId) {
+  if (!sleeperLeagueId) return null;
+
+  const key = String(sleeperLeagueId).trim();
+  if (sleeperUserCache.has(key)) return sleeperUserCache.get(key);
+
+  try {
+    const res = await fetch(`https://api.sleeper.app/v1/league/${key}/users`);
+
+    if (!res.ok) {
+      console.error('Sleeper API error for league', key, res.status);
+      sleeperUserCache.set(key, null);
+      return null;
+    }
+
+    const users = await res.json();
+    const names = new Set(
+      (users || [])
+        .map(u => (u.username || '').trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    sleeperUserCache.set(key, names);
+    return names;
+  } catch (err) {
+    console.error('Failed to reach Sleeper API for league', key, err);
+    sleeperUserCache.set(key, null);
+    return null;
+  }
+}
+
+async function loadDivisionCounts(divisions) {
+  if (!divisions || divisions.length === 0) return;
+
+  const token = localStorage.getItem('sb-auth-token');
+  const ids = divisions.map(d => d.id);
+
+  let byDivision = {};
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members?division_id=in.(${ids.join(',')})&select=division_id,profiles(sleeper_handle)`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) throw new Error(`Failed to load division members (${res.status})`);
+
+    const rows = await res.json();
+    rows.forEach(r => {
+      if (!byDivision[r.division_id]) byDivision[r.division_id] = [];
+      byDivision[r.division_id].push(r.profiles ? r.profiles.sleeper_handle : null);
+    });
+  } catch (err) {
+    console.error('Error loading division counts:', err);
+    divisions.forEach(d => {
+      const cell = document.getElementById(`entrants-${d.id}`);
+      if (cell) cell.textContent = '?';
+      const linkedCell = document.getElementById(`loggedin-${d.id}`);
+      if (linkedCell) linkedCell.textContent = '?';
+    });
+    return;
+  }
+
+  divisions.forEach(d => {
+    const handles = byDivision[d.id] || [];
+    const cell = document.getElementById(`entrants-${d.id}`);
+    if (cell) cell.textContent = handles.length;
+  });
+
+  for (const d of divisions) {
+    const cell = document.getElementById(`loggedin-${d.id}`);
+    if (!cell) continue;
+
+    const handles = byDivision[d.id] || [];
+
+    if (!d.sleeper_id) {
+      cell.textContent = '-';
+      cell.title = 'Not a Sleeper division';
+      continue;
+    }
+
+    const usernames = await fetchSleeperUsernames(d.sleeper_id);
+
+    if (!usernames) {
+      cell.textContent = '?';
+      cell.title = 'Could not reach Sleeper for this league';
+      continue;
+    }
+
+    const matched = handles.filter(h => h && usernames.has(h.trim().toLowerCase())).length;
+    cell.textContent = `${matched} / ${handles.length}`;
+    cell.title = `${matched} of ${handles.length} have joined on Sleeper with their profile username`;
+  }
+}
+
 function renderDivisionsView() {
   const adminLevel = currentProfile.admin_level || 0;
   const divisions = window.currentDivisions || [];
@@ -809,8 +908,8 @@ function renderDivisionsView() {
               <td>${d.draftboard_url ? `<a href="${d.draftboard_url}" target="_blank">View</a>` : '-'}</td>
               <td><span class="badge ${d.is_active ? 'active' : 'inactive'}">${d.is_active ? 'Active' : 'Inactive'}</span></td>
               <td>${getHostPlatform(d)}</td>
-              <td>-</td>
-              <td>-</td>
+              <td id="entrants-${d.id}">…</td>
+              <td id="loggedin-${d.id}">…</td>
               <td>${stageName}</td>
               <td>${d.invite_link ? `<a href="${d.invite_link}" target="_blank">Join</a>` : '-'}</td>
               <td><button class="btn-action" onclick="editDivisionModal('${d.id}')">Edit</button></td>
@@ -823,6 +922,7 @@ function renderDivisionsView() {
   `;
 
   document.getElementById('divisionsView').innerHTML = html;
+  loadDivisionCounts(visible);
 }
 
 function applyDivisionsFilter(filter) {
@@ -955,6 +1055,21 @@ async function loadDivisionTeams(divisionId) {
     const profileMap = {};
     profiles.forEach(p => profileMap[p.id] = p);
 
+    let sleeperUsernames = null;
+    const divRes = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}&select=sleeper_id`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (divRes.ok) {
+      const divRows = await divRes.json();
+      if (divRows.length > 0 && divRows[0].sleeper_id) {
+        sleeperUsernames = await fetchSleeperUsernames(divRows[0].sleeper_id);
+      }
+    }
+
     let html = `
       <table class="teams-table">
         <thead>
@@ -980,9 +1095,10 @@ async function loadDivisionTeams(divisionId) {
               ? `<div class="editable-cell"><span class="editable-spot" onclick="updateDraftSpot('${member.id}', '${divisionId}', '${member.user_id}', ${member.draft_spot || 'null'})">${member.draft_spot || '-'}</span><button class="btn-inline-update" onclick="updateDraftSpot('${member.id}', '${divisionId}', '${member.user_id}', ${member.draft_spot || 'null'})">✎</button></div>`
               : `<strong>${member.draft_spot || '-'}</strong>`;
             
-            const hasSleeperHandle = profile.sleeper_handle && profile.sleeper_handle.trim() !== '';
-            const statusDisplay = hasSleeperHandle ? 'Connected' : 'Pending';
-            const statusBadgeClass = hasSleeperHandle ? 'active' : 'inactive';
+            const handle = profile.sleeper_handle ? profile.sleeper_handle.trim() : '';
+            const linked = !!(sleeperUsernames && handle && sleeperUsernames.has(handle.toLowerCase()));
+            const statusDisplay = linked ? 'LINKED' : 'Not Logged In';
+            const statusBadgeClass = linked ? 'active' : 'inactive';
             
             return `
               <tr>
