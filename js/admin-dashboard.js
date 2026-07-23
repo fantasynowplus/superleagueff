@@ -1052,7 +1052,12 @@ async function addSelectedUsersToDiv(divisionId) {
 
     if (successfulUserIds.length > 0) {
       for (const userId of successfulUserIds) {
-        await syncProfileWithDivision(userId, divisionId, null);
+        try {
+          await syncProfileWithDivision(userId, divisionId, null);
+        } catch (err) {
+          console.error('Profile sync failed for', userId, err);
+          errorDetails.push(`${selectedUsers.get(userId)} was added, but their profile did not update: ${err.message}`);
+        }
       }
     }
 
@@ -1127,7 +1132,12 @@ async function updateDraftSpot(memberId, divisionId, userId, currentSpot) {
 
     if (!res.ok) throw new Error('Failed to update draft spot');
 
-    await syncProfileWithDivision(userId, divisionId, draftSpot);
+    try {
+      await syncProfileWithDivision(userId, divisionId, draftSpot);
+      alert('Draft spot updated!');
+    } catch (err) {
+      alert(`Draft spot saved on the roster, but the profile did not sync: ${err.message}`);
+    }
     loadDivisionTeams(divisionId);
     alert('Draft spot updated!');
   } catch (err) {
@@ -1136,58 +1146,47 @@ async function updateDraftSpot(memberId, divisionId, userId, currentSpot) {
 }
 
 async function syncProfileWithDivision(userId, divisionId, draftSpot) {
-  try {
-    const token = localStorage.getItem('sb-auth-token');
-    
-    const divRes = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}&select=id,league_id`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      }
-    });
+  const token = localStorage.getItem('sb-auth-token');
 
-    if (!divRes.ok) return;
-    
-    const divData = await divRes.json();
-    if (!divData || divData.length === 0) return;
-    
-    const division = divData[0];
-
-    const leagueRes = await fetch(`${SUPABASE_URL}/rest/v1/leagues?id=eq.${division.league_id}&select=id,league_name`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      }
-    });
-
-    if (!leagueRes.ok) return;
-    
-    const leagueData = await leagueRes.json();
-    if (!leagueData || leagueData.length === 0) return;
-    
-    const league = leagueData[0];
-
-    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        assigned_league_id: division.league_id,
-        assigned_league: league.league_name,
-        draft_spot: draftSpot,
-        updated_at: new Date().toISOString()
-      })
-    });
-
-    if (!profileRes.ok) {
-      console.error('Failed to sync profile');
+  const divRes = await fetch(`${SUPABASE_URL}/rest/v1/divisions?id=eq.${divisionId}&select=id,division_name,league_id,leagues(id,league_name)`, {
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token}`,
     }
-  } catch (err) {
-    console.error('Error syncing profile:', err);
-  }
+  });
+
+  if (!divRes.ok) throw new Error(`Division lookup failed (${divRes.status}): ${await divRes.text()}`);
+
+  const divData = await divRes.json();
+  const division = divData[0];
+  if (!division) throw new Error(`Division ${divisionId} not found`);
+
+  const payload = {
+    assigned_league_id: division.league_id,
+    assigned_league: division.leagues ? division.leagues.league_name : null,
+    assigned_division_id: division.id,
+    assigned_division: division.division_name || null,
+    draft_spot: draftSpot,
+    updated_at: new Date().toISOString()
+  };
+
+  const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=id`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token}`,
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!profileRes.ok) throw new Error(`Profile update failed (${profileRes.status}): ${await profileRes.text()}`);
+
+  const rows = await profileRes.json();
+  if (rows.length === 0) throw new Error('Profile update affected 0 rows — RLS is blocking the write.');
+
+  return rows[0];
 }
 
 async function removeUserFromDivision(memberId, divisionId, userName, userId) {
