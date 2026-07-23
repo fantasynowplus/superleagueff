@@ -1576,6 +1576,39 @@ body {
   color: #e26f0f;
 }
 
+.badge.history.waitlist {
+  background: rgba(160, 160, 160, 0.12);
+  border: 1px solid #6b7280;
+  color: #9ca3af;
+}
+
+.waitlist-current {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #1a4d6f;
+}
+
+.waitlist-current h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+}
+
+.waitlist-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.divisions-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .history-cell {
   display: flex;
   flex-wrap: wrap;
