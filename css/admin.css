@@ -504,8 +504,12 @@ body {
 .division-filters {
   display: flex;
   gap: 8px;
-  margin-bottom: 25px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
+}
+
+.division-filters + .division-filters {
+  margin-bottom: 25px;
 }
 
 .filter-btn {
