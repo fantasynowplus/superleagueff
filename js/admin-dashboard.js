@@ -818,6 +818,44 @@ async function loadDivisionCounts(divisions) {
   }
 }
 
+async function syncSleeperData() {
+  const adminLevel = currentProfile.admin_level || 0;
+
+  if (adminLevel < 9) {
+    alert('Only Super Admins can sync Sleeper data.');
+    return;
+  }
+
+  const button = document.getElementById('syncSleeperBtn');
+  const originalText = button ? button.textContent : '';
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Syncing...';
+  }
+
+  sleeperUserCache.clear();
+
+  try {
+    await loadDivisionCounts(filterDivisions(window.currentDivisions || []));
+
+    if (button) {
+      button.textContent = 'Synced';
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 1500);
+    }
+  } catch (err) {
+    console.error('Sleeper sync failed:', err);
+    if (button) {
+      button.textContent = originalText;
+      button.disabled = false;
+    }
+    alert('Sync failed: ' + err.message);
+  }
+}
+
 function renderDivisionsView() {
   const adminLevel = currentProfile.admin_level || 0;
   const divisions = window.currentDivisions || [];
@@ -852,6 +890,7 @@ function renderDivisionsView() {
       </div>
       ${adminLevel >= 7 ? `
         <div class="divisions-header-actions">
+        ${adminLevel >= 9 ? `<button class="section-button" id="syncSleeperBtn" onclick="syncSleeperData()">Sync Sleeper</button>` : ''}
           <button class="section-button" onclick="showWaitlistModal()">Waitlist</button>
           <button class="section-button" onclick="showCreateDivisionModal()">+ Create New Division</button>
         </div>
