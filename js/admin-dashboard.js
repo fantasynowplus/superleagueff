@@ -714,6 +714,7 @@ function filterDivisions(divisions) {
     if (divisionsFilter === 'inactive' && d.is_active) return false;
     if (divisionsFilter === 'sleeper' && getHostPlatform(d) !== 'Sleeper') return false;
     if (divisionsFilter === 'mfl' && getHostPlatform(d) !== 'MFL') return false;
+    if (divisionsFilter === 'notlinked') return true;
     if (divisionsStageFilter !== 'all' && d.league_stage !== parseInt(divisionsStageFilter)) return false;
     return true;
   });
@@ -875,6 +876,124 @@ async function syncSleeperData() {
   }
 }
 
+function renderFilterBar(adminLevel, statusFilters, stageFilters, heading) {
+  return `
+    <div class="divisions-header">
+      <div>
+        <h2>${window.currentLeagueName} Divisions</h2>
+        <p>${heading}</p>
+      </div>
+      ${adminLevel >= 7 ? `
+        <div class="divisions-header-actions">
+        ${adminLevel >= 9 ? `<button class="section-button" id="syncSleeperBtn" onclick="syncSleeperData()">Sync Sleeper</button>` : ''}
+          <button class="section-button" onclick="showWaitlistModal()">Waitlist</button>
+          <button class="section-button" onclick="showCreateDivisionModal()">+ Create New Division</button>
+        </div>
+      ` : ''}
+    </div>
+
+    <div class="division-filters">
+      ${statusFilters.map(([value, label]) => `
+        <button class="filter-btn ${divisionsFilter === value ? 'active' : ''}" onclick="applyDivisionsFilter('${value}')">${label}</button>
+      `).join('')}
+    </div>
+
+    <div class="division-filters">
+      ${stageFilters.map(([value, label]) => `
+        <button class="filter-btn ${divisionsStageFilter === value ? 'active' : ''}" onclick="applyStageFilter('${value}')">${label}</button>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderNotLoggedInView(adminLevel, statusFilters, stageFilters) {
+  document.getElementById('divisionsView').innerHTML =
+    renderFilterBar(adminLevel, statusFilters, stageFilters, 'Members not yet linked to their host league') +
+    '<div id="notLinkedTable"><div class="loading">Loading...</div></div>';
+  loadNotLoggedIn();
+}
+
+async function loadNotLoggedIn() {
+  const container = document.getElementById('notLinkedTable');
+  if (!container) return;
+
+  const divisions = window.currentDivisions || [];
+  const byId = {};
+  divisions.forEach(d => byId[d.id] = d);
+
+  const ids = divisions
+    .filter(d => divisionsStageFilter === 'all' || d.league_stage === parseInt(divisionsStageFilter))
+    .map(d => d.id);
+
+  if (ids.length === 0) {
+    container.innerHTML = '<div class="empty-state">No divisions match these filters</div>';
+    return;
+  }
+
+  const token = localStorage.getItem('sb-auth-token');
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/division_members?division_id=in.(${ids.join(',')})&linked=is.false&select=id,division_id,draft_spot,profiles(name,email,sleeper_handle,mfl_handle)`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) throw new Error(`Failed to load (${res.status})`);
+
+    const rows = await res.json();
+
+    if (rows.length === 0) {
+      container.innerHTML = '<div class="empty-state">Everyone in this league is linked</div>';
+      return;
+    }
+
+    rows.sort((a, b) => {
+      const da = byId[a.division_id] ? byId[a.division_id].division_name : '';
+      const db = byId[b.division_id] ? byId[b.division_id].division_name : '';
+      if (da !== db) return da.localeCompare(db);
+      return (a.draft_spot || 0) - (b.draft_spot || 0);
+    });
+
+    container.innerHTML = `
+      <p class="not-linked-count">${rows.length} not logged in</p>
+      <div class="divisions-table-wrapper">
+        <table class="divisions-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Username</th>
+              <th>Division</th>
+              <th>Invite Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => {
+              const p = r.profiles || {};
+              const d = byId[r.division_id] || {};
+              const isMfl = !!d.mfl_id;
+              const username = isMfl ? p.mfl_handle : p.sleeper_handle;
+              return `
+              <tr>
+                <td>${p.name || '(not set)'}</td>
+                <td>${p.email || '-'}</td>
+                <td>${username || '<span class="missing-handle">not set</span>'}</td>
+                <td>${d.division_name || '-'} <span class="platform-tag">${isMfl ? 'MFL' : 'Sleeper'}</span></td>
+                <td>${d.invite_link ? `<a href="${d.invite_link}" target="_blank">Join</a>` : '-'}</td>
+              </tr>
+            `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
 function renderDivisionsView() {
   const adminLevel = currentProfile.admin_level || 0;
   const divisions = window.currentDivisions || [];
@@ -885,7 +1004,8 @@ function renderDivisionsView() {
     ['active', 'Active'],
     ['inactive', 'Not Active'],
     ['sleeper', 'Sleeper'],
-    ['mfl', 'MFL']
+    ['mfl', 'MFL'],
+    ['notlinked', 'Not Logged In']
   ];
 
   const stageFilters = [
@@ -897,6 +1017,10 @@ function renderDivisionsView() {
     ['4', 'Stage 4']
   ];
 
+  if (divisionsFilter === 'notlinked') {
+    renderNotLoggedInView(adminLevel, statusFilters, stageFilters);
+    return;
+  }
   const countText = visible.length === divisions.length
     ? `${divisions.length} divisions`
     : `${visible.length} of ${divisions.length} divisions`;
