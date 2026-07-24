@@ -47,7 +47,7 @@ function seasonYear(division) {
 }
 
 async function getDivisionMembers(divisionId) {
-  const url = `${SUPABASE_URL}/rest/v1/division_members?division_id=eq.${divisionId}&select=id,user_id,profiles(email,mfl_handle)`;
+  const url = `${SUPABASE_URL}/rest/v1/division_members?division_id=eq.${divisionId}&select=id,user_id,profiles(email,mfl_handle,sleeper_handle)`;
   const res = await fetch(url, {
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
   });
