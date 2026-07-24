@@ -1,0 +1,88 @@
+name: Update Fundraising Data
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-fundraising:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Create data directory
+        run: mkdir -p data
+      
+      - name: Fetch and extract fundraising amount
+        run: |
+          python3 << 'EOF'
+          import json
+          import urllib.request
+          import urllib.error
+          import ssl
+          
+          url = 'https://www.extra-life.org/api/1.6/teams/73449'
+          print(f"Fetching from: {url}")
+          
+          try:
+              # Create SSL context that doesn't verify certificates (sometimes needed)
+              ssl_context = ssl.create_default_context()
+              ssl_context.check_hostname = False
+              ssl_context.verify_mode = ssl.CERT_NONE
+              
+              req = urllib.request.Request(url)
+              req.add_header('User-Agent', 'Mozilla/5.0')
+              
+              with urllib.request.urlopen(req, context=ssl_context) as response:
+                  response_text = response.read().decode('utf-8')
+                  print(f"Response length: {len(response_text)} bytes")
+                  print(f"Response (first 500 chars): {response_text[:500]}")
+                  
+                  data = json.loads(response_text)
+                  print(f"Parsed JSON successfully")
+                  print(f"Available keys: {list(data.keys())}")
+                  
+                  amount = data.get('sumDonations')
+                  print(f"sumDonations value: {amount}")
+                  print(f"Type: {type(amount)}")
+                  
+                  if amount is None:
+                      print("ERROR: sumDonations key not found!")
+                      exit(1)
+                  
+                  # Write just the number to the file
+                  with open('data/fundraising.json', 'w') as f:
+                      json.dump(amount, f)
+                  
+                  print(f"Successfully wrote {amount} to data/fundraising.json")
+                  
+          except urllib.error.HTTPError as e:
+              print(f"HTTP Error {e.code}: {e.reason}")
+              print(f"Response: {e.read().decode('utf-8')}")
+              exit(1)
+          except urllib.error.URLError as e:
+              print(f"URL Error: {e.reason}")
+              exit(1)
+          except json.JSONDecodeError as e:
+              print(f"JSON Decode Error: {e}")
+              print(f"Could not parse response as JSON")
+              exit(1)
+          except Exception as e:
+              print(f"Unexpected error: {type(e).__name__}: {e}")
+              import traceback
+              traceback.print_exc()
+              exit(1)
+          EOF
+      
+      - name: Commit and push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/fundraising.json
+          git commit -m "chore: update fundraising data" || echo "No changes"
+          git push

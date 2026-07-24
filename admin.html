@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login — Super League</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="login-container">
+    <h1>Admin Portal</h1>
+    <div class="admin-badge">ADMIN ACCESS ONLY</div>
+    
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" required>
+      </div>
+      <button type="submit">Login to Admin</button>
+      <div id="error" class="error"></div>
+    </form>
+
+    <div class="back-link">
+      <a href="./login.html">← Back to User Login</a>
+    </div>
+  </div>
+
+  <script src="./js/auth.js"></script>
+  <script>
+    async function handleAdminAccess() {
+      if (!auth.isAuthenticated()) {
+        return;
+      }
+
+      let attempts = 0;
+      while (!auth.profile && attempts < 50) {
+        await new Promise(r => setTimeout(r, 100));
+        attempts++;
+      }
+
+      const adminLevel = auth.profile?.admin_level || 0;
+      
+      if (adminLevel >= 1) {
+        window.location.href = './admin-dashboard.html';
+      }
+    }
+
+    handleAdminAccess();
+
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('error');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const button = loginForm.querySelector('button');
+      
+      loginError.classList.remove('show');
+      button.style.opacity = '0.6';
+      button.style.pointerEvents = 'none';
+
+      try {
+        await auth.login(email, password);
+        
+        let attempts = 0;
+        while (!auth.profile && attempts < 50) {
+          await new Promise(r => setTimeout(r, 100));
+          attempts++;
+        }
+
+        const adminLevel = auth.profile?.admin_level || 0;
+        
+        if (adminLevel >= 1) {
+          window.location.href = './admin-dashboard.html';
+        } else {
+          loginError.textContent = 'You do not have admin access. Please login with an admin account.';
+          loginError.classList.add('show');
+          await auth.logout();
+          button.style.opacity = '1';
+          button.style.pointerEvents = 'auto';
+        }
+      } catch (err) {
+        loginError.textContent = err.message;
+        loginError.classList.add('show');
+        button.style.opacity = '1';
+        button.style.pointerEvents = 'auto';
+      }
+    });
+  </script>
+</body>
+</html>

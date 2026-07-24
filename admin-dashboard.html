@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Super League</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <img src="./assets/images/League-Logo.png" alt="Super League" class="brand-logo">
+        <div class="brand-text">
+          <h3>Super League</h3>
+          <p>Admin Portal</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-link active" data-section="dashboard">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-link" data-section="users">
+          <span class="nav-icon">👥</span>
+          <span>Users</span>
+        </button>
+        <button class="nav-link" data-section="leagues">
+          <span class="nav-icon">🏆</span>
+          <span>Leagues</span>
+        </button>
+        <button class="nav-link" data-section="admin-manage">
+          <span class="nav-icon">⚙️</span>
+          <span>Admins</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-user">
+        <div class="user-avatar"></div>
+        <div class="user-info">
+          <p class="user-name" id="sidebarUserName">Admin</p>
+          <p class="user-level" id="sidebarUserLevel">Super Admin</p>
+        </div>
+      </div>
+
+      <button class="sidebar-logout" id="sidebarLogout">Logout</button>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1 id="pageTitle">Dashboard</h1>
+          <p class="breadcrumb"><span id="adminLevel"></span></p>
+        </div>
+        <div class="header-right">
+          <span id="headerUserName"></span>
+          <button class="header-logout" id="headerLogout">Logout</button>
+        </div>
+      </header>
+
+      <section id="dashboard" class="admin-section active">
+        <div class="dashboard-hero">
+          <div class="hero-content">
+            <h2 id="welcomeMsg">Welcome back</h2>
+            <p>Super League FF Admin Portal</p>
+          </div>
+          <img src="./assets/images/Super-League-Banner.png" alt="Super League" class="hero-image">
+        </div>
+
+        <div class="access-card">
+          <p><strong>Access Level:</strong> <span id="yourLevel"></span></p>
+          <p><strong>Authorized Levels:</strong> 1, 4, 7, 9</p>
+        </div>
+
+        <div class="dashboard-grid" id="dashboardCards"></div>
+      </section>
+
+      <section id="users" class="admin-section">
+        <div class="section-header">
+          <h2>User Management</h2>
+          <p>View and manage all user profiles</p>
+        </div>
+        <div id="usersContent"></div>
+      </section>
+
+      <section id="leagues" class="admin-section">
+        <div class="section-header">
+          <h2>League Management</h2>
+          <p>Manage leagues and assignments</p>
+        </div>
+        <div id="leaguesContent"></div>
+      </section>
+
+      <section id="admin-manage" class="admin-section">
+        <div class="section-header">
+          <h2>Admin Management</h2>
+          <p>Adjust admin levels and permissions</p>
+        </div>
+        <div id="adminContent"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./js/auth.js"></script>
+  <script src="./js/admin-dashboard.js"></script>
+</body>
+</html>

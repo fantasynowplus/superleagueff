@@ -1,0 +1,45 @@
+name: Sync leagues
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: league-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Sync league data
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          MFL_API_KEYS: ${{ secrets.MFL_API_KEYS }}
+          MFL_USER_AGENT: ${{ secrets.MFL_USER_AGENT }}
+          MFL_USERNAME: ${{ secrets.MFL_USERNAME }}
+          MFL_PASSWORD: ${{ secrets.MFL_PASSWORD }}
+        run: node scripts/sync-leagues.js
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/mfl-leagues.json
+          if git diff --staged --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Update MFL league data"
+            git push
+          fi

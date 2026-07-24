@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Standings — Super League </title>
+<meta name="description" content="Current standings for Super League, a charity fantasy football league.">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/standings.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <img src="assets/images/Super-League-Banner.png" alt="Super League" class="site-logo">
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="rules-register.html">Rules</a>
+      <a href="divisions.html" class="hidden-nav">Divisions</a>
+      <a href="draft-tool.html">Draft Tool</a>
+      <a href="standings.html" class="active">Standings</a>
+      <a href="https://www.extra-life.org/teams/slff">Donate</a>
+      <a href="login.html" class="donate-link" target="_blank" rel="noopener">Login</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" style="padding-bottom: 40px;">
+  <div class="wrap">
+    <div class="eyebrow">Live Standings</div>
+    <h1>The <em>scoreboard</em> doesn't lie.</h1>
+    <p class="lede">Standings update weekly once the season kicks off. Check back every Tuesday after Monday Night Football.</p>
+  </div>
+</section>
+
+<section class="standings-section">
+  <div class="standings-container">
+    <div class="standings-header">
+      <h2>League Standings</h2>
+      <p>Current Super League standings across all divisions, sorted by Points For (PF) with wins as a tiebreaker.</p>
+    </div>
+
+    <div class="standings-controls">
+      <select id="division-filter">
+        <option value="">All Divisions</option>
+      </select>
+    </div>
+
+    <div id="standings-loading" class="standings-loading">
+      Loading standings...
+    </div>
+
+    <div id="standings-error" class="standings-error" style="display: none;"></div>
+
+    <div class="standings-table-wrapper">
+      <table class="standings-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Team</th>
+            <th>Division</th>
+            <th>Points For</th>
+            <th>Record</th>
+          </tr>
+        </thead>
+        <tbody id="standings-table-body">
+          <tr>
+            <td colspan="5" class="standings-empty">Loading data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>&copy; 2026 Super League. A charity fantasy football league.</p>
+    <nav>
+      <a href="rules-register.html">Rules</a>
+      <a href="draft-tool.html">Draft Tool</a>
+      <a href="standings.html">Standings</a>
+    </nav>
+  </div>
+</footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/standings.js"></script>
+</body>
+</html>

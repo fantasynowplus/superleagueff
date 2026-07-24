@@ -1,0 +1,27 @@
+name: Update Standings Data
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Fetch standings from Apps Script
+        run: |
+          curl -L -s "https://script.google.com/macros/s/AKfycbw-_FgNgnom-K33Y-RnFdb6gLhkWROZr2SlkMNDnJlnvQPI5VJBzT3gneRVk_yPgwYf6Q/exec" \
+            -o data/standings.json
+      
+      - name: Commit if changed
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add data/standings.json
+          git diff --quiet && git diff --staged --quiet || \
+            (git commit -m "Update standings data" && git push)
