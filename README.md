@@ -1,50 +1,117 @@
 # Super League FF
 
-Static site for superleagueff.org — a charity fantasy football league.
+Static site for [superleagueff.org](https://superleagueff.org) — a charity fantasy football league benefiting Extra Life (team `73449`).
+
+Plain HTML, CSS, and JavaScript with no build step. Deployed via GitHub Pages from the `main` branch, root folder. Dynamic data is written into `data/*.json` by scheduled GitHub Actions and read client-side at page load, which keeps the front end fully static while avoiding CORS restrictions on the upstream APIs.
+
+## Pages
+
+| File | Purpose |
+| --- | --- |
+| `index.html` | Homepage — how it works, why we play, Hall of Champions, live fundraising total |
+| `rules-register.html` | League rules, scoring, playoff format, registration |
+| `divisions.html` | Division selection |
+| `standings.html` | Live standings with division filtering |
+| `draft-tool.html` | Draft recap graphic generator |
+| `login.html` | Member sign-in |
+| `profile.html` | Member profile — social and fantasy platform handles |
+| `admin.html` | Admin sign-in |
+| `admin-dashboard.html` | Admin portal — users, leagues, divisions, admins |
 
 ## Structure
 
-- `index.html` — Homepage
-- `rules-register.html` — Rules + team registration form
-- `divisions.html` — Division selection
-- `standings.html` — Live standings
-- `css/style.css` — Shared styles
-- `js/main.js` — Mobile nav toggle
+```
+├── .github/workflows/     Scheduled data sync jobs
+├── assets/images/         Logo and banner
+├── css/
+│   ├── style.css          Shared base styles, nav, typography
+│   ├── admin.css          Admin dashboard
+│   ├── rules.css          Rules, scoring, playoff brackets
+│   ├── standings.css      Standings table
+│   └── tools.css          Draft tool
+├── data/                  Machine-written JSON, do not edit by hand
+│   ├── fundraising.json   Extra Life total raised
+│   ├── mfl-leagues.json   Per-division roster and link status
+│   └── standings.json     Team standings
+├── js/
+│   ├── main.js            Mobile nav toggle, fundraising total
+│   ├── auth.js            Supabase auth and profile fetching
+│   ├── standings.js       StandingsManager — fetch, filter, render
+│   ├── admin-dashboard.js Admin portal logic
+│   └── draft-recap-generator.js
+├── scripts/
+│   └── sync-leagues.js    League sync job (runs in Actions, not the browser)
+├── favicon.ico
+└── index.html
+```
 
-## Things to fill in before launch
+## Branding
 
-Search each page for bracketed placeholders and swap in real content:
+| Role | Hex |
+| --- | --- |
+| Primary navy | `#06192b` |
+| Secondary orange | `#e26f0f` |
+| Third tan | `#f1e6d1` |
 
-- `[Charity Name]` — the charity entry fees go toward
-- `$00,000` / team counts on the homepage scoreboard
-- Entry fee, draft date, playoff format on the Rules page
-- Division names/descriptions on the Divisions page
-- The `Donate` link `href="#"` in every page's nav — point it at your actual donation page
-- Standings table rows once the season is live
+Typography: Anton for headings, Work Sans for body, IBM Plex Mono for data columns. Spacing follows multiples of 8px. CSS files contain no comments by convention.
 
-## Testing now (before the domain is pointed)
+## Data pipeline
 
-1. Push this repo to GitHub as its own repo, separate from your other site.
-2. In the repo, go to **Settings → Pages**.
-3. Under **Build and deployment**, set **Source** to "Deploy from a branch," branch `main`, folder `/ (root)`.
-4. Save — GitHub will give you a working preview URL at `https://<your-username>.github.io/<repo-name>/`. That's enough to test everything before touching DNS.
+Three scheduled workflows commit refreshed JSON back into `data/`, which triggers a Pages redeploy.
 
-You can also just open `index.html` directly in a browser (or run a quick local server, e.g. `python3 -m http.server`) to preview without pushing anything.
+**`update-fundraising.yml`** — hourly. Reads `sumDonations` from the Extra Life team API and writes `data/fundraising.json`. Consumed by `fetchRaisedAmount()` in `js/main.js`, rendered into `#raised-amount`.
 
-## Later: pointing superleagueff.org at it
+**`update-standings.yml`** — hourly. Pulls a published Google Apps Script endpoint into `data/standings.json` as an array of `{ team, division, pointsFor, record, link }`.
 
-When you're ready to go live on the real domain:
+**`league-sync.yml`** — every six hours. Runs `scripts/sync-leagues.js`, which authenticates to MyFantasyLeague and Sleeper, reconciles rosters against Supabase, writes linked status onto `division_members`, and emits per-division counts to `data/mfl-leagues.json`. MFL forbids browser-side calls and sends no CORS headers, so this has to run server-side. Only aggregate counts are committed — no member emails or personal data land in the repo.
 
-1. In **Settings → Pages**, under **Custom domain**, enter `superleagueff.org` and save — this creates a `CNAME` file in the repo automatically.
-2. At your domain registrar (wherever `superleagueff.org` is registered), add these DNS records pointing at GitHub Pages:
-   - Four `A` records for the apex domain (`@`) pointing to:
-     - `185.199.108.153`
-     - `185.199.109.153`
-     - `185.199.110.153`
-     - `185.199.111.153`
-   - A `CNAME` record for `www` pointing to `<your-github-username>.github.io`
-3. Once DNS propagates (a few minutes to 24 hours), check **Enforce HTTPS** in the Pages settings.
+Each workflow can also be run on demand from the Actions tab via **Run workflow**.
 
-## Next phase: accounts + profiles
+## Supabase
 
-This site is static for now (no backend). When you're ready to add team accounts, profile editing (social handles, fantasy handles), and admin-managed tags/IDs, that's a Supabase layer that plugs into these same pages — happy to build that out next.
+Auth and profile data live in Supabase. `js/auth.js` holds the project URL and the publishable (anon) key — these are safe to ship in client code; row-level security is what actually protects the data. Users can only read and write their own profile row, and admin writes are gated behind an RLS policy keyed on `admin_level`.
+
+Schema is uuid-based: `leagues` → `divisions` → `division_members`, with `profiles` linked to `auth.users`.
+
+### Admin levels
+
+| Level | Capability |
+| --- | --- |
+| 1 | View division members |
+| 4 | View members, update Sleeper handles |
+| 7 | Create and edit divisions, add and remove users, set draft spots |
+| 9 | Create leagues, delete |
+
+## Required repository secrets
+
+Set under **Settings → Secrets and variables → Actions**.
+
+| Secret | Used by |
+| --- | --- |
+| `SUPABASE_URL` | `league-sync.yml` |
+| `SUPABASE_KEY` | `league-sync.yml` |
+| `MFL_USERNAME` | `league-sync.yml` |
+| `MFL_PASSWORD` | `league-sync.yml` |
+| `MFL_USER_AGENT` | `league-sync.yml` |
+| `MFL_API_KEYS` | `league-sync.yml` (JSON map of league ID to API key; optional) |
+
+MFL API keys are per league and per franchise. Because the commissioner account has no franchise of its own, the sync falls back to the username and password login flow.
+
+## Editing
+
+All work happens in the GitHub web interface. Edit a file, commit to `main`, and Pages redeploys within a minute or two.
+
+Do not hand-edit anything in `data/` — the next scheduled workflow run will overwrite it.
+
+## Deployment
+
+**Settings → Pages** → Source: Deploy from a branch → Branch `main`, folder `/ (root)`.
+
+The custom domain is configured in the same panel, which writes a `CNAME` file to the repo root. DNS is managed in Cloudflare with the domain registered at Namecheap.
+
+## Roadmap
+
+- Password reset flow (`forgot-password.html`, Supabase recovery email)
+- SLFF History field on profiles listing every league a member has played in
+- Per-league waitlist for members who register without receiving a team
+- Automatic league stage advancement driven by the sync job
