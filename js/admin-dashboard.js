@@ -980,7 +980,7 @@ async function loadNotLoggedIn() {
                 <td>${p.name || '(not set)'}</td>
                 <td>${p.email || '-'}</td>
                 <td>${username || '<span class="missing-handle">not set</span>'}</td>
-                <td>${d.division_name || '-'}</td>
+                <td>${d.division_name || '-'} <span class="platform-tag">${isMfl ? 'MFL' : 'Sleeper'}</span></td>
                 <td>${d.invite_link ? `<a href="${d.invite_link}" target="_blank">Join</a>` : '-'}</td>
               </tr>
             `;
@@ -1021,6 +1021,7 @@ function renderDivisionsView() {
     renderNotLoggedInView(adminLevel, statusFilters, stageFilters);
     return;
   }
+
   const countText = visible.length === divisions.length
     ? `${divisions.length} divisions`
     : `${visible.length} of ${divisions.length} divisions`;
@@ -2355,8 +2356,217 @@ async function saveNewLeague() {
   }
 }
 
+const ADMIN_LEVELS = [
+  { value: 9, name: 'Super Admin', desc: 'Everything, including managing admins and creating leagues' },
+  { value: 7, name: 'Manager', desc: 'Create and edit divisions, add and remove members, edit profiles' },
+  { value: 4, name: 'Editor', desc: 'View members and update handles' },
+  { value: 1, name: 'Viewer', desc: 'View division members only' }
+];
+
+function adminLevelName(level) {
+  const match = ADMIN_LEVELS.find(l => l.value === level);
+  return match ? match.name : `Level ${level}`;
+}
+
 async function loadAdminManagement() {
-  document.getElementById('adminContent').innerHTML = '<div class="loading">Loading admin management...</div>';
+  const container = document.getElementById('adminContent');
+  container.innerHTML = '<div class="loading">Loading admin management...</div>';
+
+  const myLevel = currentProfile.admin_level || 0;
+  const canManage = myLevel >= 9;
+  const token = localStorage.getItem('sb-auth-token');
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?admin_level=gt.0&select=id,name,email,admin_level&order=admin_level.desc,name.asc`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) throw new Error(`Failed to load admins (${res.status})`);
+
+    const admins = await res.json();
+    const superAdmins = admins.filter(a => a.admin_level === 9).length;
+
+    container.innerHTML = `
+      ${canManage ? `
+        <div class="admin-grant">
+          <h3>Grant Admin Access</h3>
+          <p class="hint">Search for any member, then choose the level to give them.</p>
+          <input type="text" id="admin-search" placeholder="Search by name or email...">
+          <div id="admin-search-results"></div>
+        </div>
+      ` : '<div class="access-card"><p>You can view admins but only Super Admins can change levels.</p></div>'}
+
+      <div class="admin-list">
+        <h3>Current Admins (${admins.length})</h3>
+        <div class="divisions-table-wrapper">
+          <table class="divisions-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Level</th>
+                <th>Role</th>
+                ${canManage ? '<th>Actions</th>' : ''}
+              </tr>
+            </thead>
+            <tbody>
+              ${admins.map(a => {
+                const isSelf = a.id === currentProfile.id;
+                const lastSuper = a.admin_level === 9 && superAdmins <= 1;
+                return `
+                <tr>
+                  <td><strong>${a.name || '(not set)'}</strong>${isSelf ? ' <span class="platform-tag">you</span>' : ''}</td>
+                  <td>${a.email || '-'}</td>
+                  <td><span class="badge active">${a.admin_level}</span></td>
+                  <td>${adminLevelName(a.admin_level)}</td>
+                  ${canManage ? `
+                    <td>
+                      ${isSelf || lastSuper
+                        ? `<span class="platform-tag">${isSelf ? 'cannot edit own level' : 'last super admin'}</span>`
+                        : `
+                          <select class="level-select" onchange="changeAdminLevel('${a.id}', this.value, '${(a.name || a.email || '').replace(/'/g, "\\'")}')">
+                            ${ADMIN_LEVELS.map(l => `<option value="${l.value}" ${l.value === a.admin_level ? 'selected' : ''}>${l.value} - ${l.name}</option>`).join('')}
+                            <option value="0">0 - Remove access</option>
+                          </select>
+                        `}
+                    </td>
+                  ` : ''}
+                </tr>
+              `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin-legend">
+        <h3>What Each Level Can Do</h3>
+        ${ADMIN_LEVELS.map(l => `
+          <div class="legend-row">
+            <span class="badge active">${l.value}</span>
+            <div>
+              <strong>${l.name}</strong>
+              <p>${l.desc}</p>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    if (canManage) {
+      const input = document.getElementById('admin-search');
+      input.addEventListener('input', () => searchAdminCandidates(input.value));
+    }
+  } catch (err) {
+    container.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+async function searchAdminCandidates(query) {
+  const results = document.getElementById('admin-search-results');
+  if (!results) return;
+
+  if (!query || query.trim().length < 2) {
+    results.innerHTML = '';
+    return;
+  }
+
+  const token = localStorage.getItem('sb-auth-token');
+  const term = encodeURIComponent(`%${query.trim()}%`);
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?or=(name.ilike.${term},email.ilike.${term})&select=id,name,email,admin_level&limit=10`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!res.ok) throw new Error(`Search failed (${res.status})`);
+
+    const users = await res.json();
+
+    if (users.length === 0) {
+      results.innerHTML = '<p class="empty">No members found</p>';
+      return;
+    }
+
+    results.innerHTML = users.map(u => `
+      <div class="admin-search-row">
+        <div>
+          <strong>${u.name || '(not set)'}</strong>
+          <span class="platform-tag">${u.email || ''}</span>
+          ${u.admin_level > 0 ? `<span class="badge active">${u.admin_level}</span>` : ''}
+        </div>
+        <select class="level-select" id="grant-${u.id}">
+          ${ADMIN_LEVELS.map(l => `<option value="${l.value}">${l.value} - ${l.name}</option>`).join('')}
+        </select>
+        <button class="btn-action" onclick="grantAdmin('${u.id}', '${(u.name || u.email || '').replace(/'/g, "\\'")}')">Grant</button>
+      </div>
+    `).join('');
+  } catch (err) {
+    results.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+async function grantAdmin(userId, userName) {
+  const select = document.getElementById(`grant-${userId}`);
+  if (!select) return;
+
+  const level = parseInt(select.value, 10);
+  if (!confirm(`Give ${userName} level ${level} (${adminLevelName(level)}) access?`)) return;
+
+  await writeAdminLevel(userId, level, userName);
+}
+
+async function changeAdminLevel(userId, value, userName) {
+  const level = parseInt(value, 10);
+  const label = level === 0 ? 'remove all admin access from' : `set ${userName} to level ${level} (${adminLevelName(level)})`;
+
+  if (!confirm(level === 0 ? `Remove all admin access from ${userName}?` : `Change: ${label}?`)) {
+    loadAdminManagement();
+    return;
+  }
+
+  await writeAdminLevel(userId, level, userName);
+}
+
+async function writeAdminLevel(userId, level, userName) {
+  const token = localStorage.getItem('sb-auth-token');
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=id,admin_level`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        admin_level: level,
+        updated_at: new Date().toISOString()
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error(`${res.status}: ${await res.text()}`);
+    }
+
+    const rows = await res.json();
+    if (rows.length === 0) {
+      throw new Error('Update affected 0 rows - RLS is blocking the write.');
+    }
+
+    alert(`${userName} is now level ${level}`);
+    loadAdminManagement();
+  } catch (err) {
+    alert('Could not change level. ' + err.message);
+    loadAdminManagement();
+  }
 }
 
 initAdmin();
