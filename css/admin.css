@@ -1717,3 +1717,45 @@ body {
   color: #8fa3b5;
   font-size: 13px;
 }
+
+.dashboard-activity,
+.admin-activity-panel {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #1a4d6f;
+}
+
+.dashboard-activity h3,
+.admin-activity-panel h3 {
+  margin: 0 0 14px;
+  font-size: 16px;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.online-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.online-dot.on {
+  background: #16a34a;
+  box-shadow: 0 0 6px rgba(22, 163, 74, 0.7);
+}
+
+.online-dot.off {
+  background: #3f5061;
+}
+
+.dashboard-card.site-card {
+  border-color: #e26f0f;
+}
+
+.admin-grant .section-button {
+  margin-bottom: 14px;
+}
