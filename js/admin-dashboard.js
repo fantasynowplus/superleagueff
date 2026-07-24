@@ -2727,6 +2727,8 @@ async function saveNewUser() {
 }
 
 async function searchAdminCandidates(query) {
+  const isSuper = (currentProfile.admin_level || 0) >= 9;
+  const grantable = isSuper ? ADMIN_LEVELS : ADMIN_LEVELS.filter(l => l.value <= 4);
   const results = document.getElementById('admin-search-results');
   if (!results) return;
 
