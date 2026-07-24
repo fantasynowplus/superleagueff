@@ -2609,16 +2609,20 @@ async function showCreateUserModal() {
   let nextId = '';
   try {
     const token = localStorage.getItem('sb-auth-token');
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=slffid&order=slffid.desc&limit=1`, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/next_slffid`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`
+      },
+      body: '{}'
     });
     if (res.ok) {
-      const rows = await res.json();
-      const highest = rows.length && /^\d+$/.test(rows[0].slffid) ? parseInt(rows[0].slffid, 10) : 1000;
-      nextId = String(highest + 1);
+      nextId = (await res.json()) || '';
     }
   } catch (err) {
-    console.error('Could not read highest SLFF ID:', err);
+    console.error('Could not read next SLFF ID:', err);
   }
 
   const modal = document.createElement('div');
