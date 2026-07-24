@@ -28,6 +28,8 @@ async function initAdmin() {
   setupUI(adminLevel);
   setupEventListeners(adminLevel);
   loadDashboard(adminLevel);
+  touchLastSeen();
+  setInterval(touchLastSeen, 120000);
 }
 
 function setupUI(level) {
@@ -43,13 +45,23 @@ function setupUI(level) {
   document.getElementById('sidebarUserName').textContent = currentProfile.name || 'Admin';
   document.getElementById('sidebarUserLevel').textContent = levelNames[level] || `Level ${level}`;
   document.getElementById('adminLevel').textContent = levelNames[level] || `Level ${level}`;
-  document.getElementById('welcomeMsg').textContent = `Welcome, ${currentProfile.name || 'Admin'}`;
+  document.getElementById('welcomeMsg').textContent = `Thank you, ${currentProfile.name || 'Admin'}`;
+  const heroCopy = document.querySelector('.hero-content p');
+  if (heroCopy) {
+    heroCopy.textContent = 'Thank you for everything you do for Super League. The work you put in behind the scenes is what has made this league what it is today.';
+  }
   document.getElementById('headerUserName').textContent = currentProfile.name || 'Admin';
   document.getElementById('yourLevel').textContent = levelNames[level] || `Level ${level}`;
   document.querySelector('.user-avatar').textContent = initial;
 }
 
 function setupEventListeners(level) {
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const section = link.dataset.section;
+    if (section === 'users' && level < 4) link.style.display = 'none';
+    if (section === 'admin-manage' && level < 7) link.style.display = 'none';
+  });
+
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', () => {
       const section = link.dataset.section;
@@ -87,56 +99,161 @@ function setupEventListeners(level) {
   }
 }
 
-async function loadDashboard(level) {
-  const cardsHTML = level === 9 ? `
-    <div class="dashboard-card" onclick="navigateTo('users')">
-      <div class="card-icon">👥</div>
-      <h3 class="card-title">All Users</h3>
-      <p class="card-description">View and manage all user profiles</p>
-      <button class="card-button">View Users</button>
-    </div>
-    <div class="dashboard-card" onclick="navigateTo('leagues')">
-      <div class="card-icon">🏆</div>
-      <h3 class="card-title">Leagues</h3>
-      <p class="card-description">Manage leagues and assignments</p>
-      <button class="card-button">Manage Leagues</button>
-    </div>
-    <div class="dashboard-card" onclick="navigateTo('admin-manage')">
-      <div class="card-icon">⚙️</div>
-      <h3 class="card-title">Admin Management</h3>
-      <p class="card-description">Adjust admin levels and permissions</p>
-      <button class="card-button">Manage Admins</button>
-    </div>
-  ` : level === 7 ? `
-    <div class="dashboard-card" onclick="navigateTo('users')">
-      <div class="card-icon">👥</div>
-      <h3 class="card-title">All Users</h3>
-      <p class="card-description">View and manage user profiles</p>
-      <button class="card-button">View Users</button>
-    </div>
-    <div class="dashboard-card" onclick="navigateTo('leagues')">
-      <div class="card-icon">🏆</div>
-      <h3 class="card-title">Leagues</h3>
-      <p class="card-description">Manage leagues and assignments</p>
-      <button class="card-button">Manage Leagues</button>
-    </div>
-  ` : level === 4 ? `
-    <div class="dashboard-card" onclick="navigateTo('users')">
-      <div class="card-icon">👥</div>
-      <h3 class="card-title">All Users</h3>
-      <p class="card-description">View all user profiles</p>
-      <button class="card-button">View Users</button>
-    </div>
-  ` : `
-    <div class="dashboard-card" onclick="navigateTo('leagues')">
-      <div class="card-icon">⚡</div>
-      <h3 class="card-title">Your Leagues</h3>
-      <p class="card-description">Manage your assigned leagues</p>
-      <button class="card-button">Manage</button>
+async function touchLastSeen() {
+  if (!currentProfile) return;
+  const token = localStorage.getItem('sb-auth-token');
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${currentProfile.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ last_seen_at: new Date().toISOString() })
+    });
+  } catch (err) {
+    console.error('Heartbeat failed:', err);
+  }
+}
+
+function timeAgo(value) {
+  if (!value) return 'never';
+  const diff = Date.now() - new Date(value).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(value).toLocaleDateString();
+}
+
+function isOnline(lastSeen) {
+  if (!lastSeen) return false;
+  return Date.now() - new Date(lastSeen).getTime() < 300000;
+}
+
+async function fetchAdminActivity() {
+  const token = localStorage.getItem('sb-auth-token');
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_admin_activity`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token}`
+    },
+    body: '{}'
+  });
+
+  if (!res.ok) throw new Error(`Could not load admin activity (${res.status})`);
+  return res.json();
+}
+
+function renderAdminActivityTable(admins) {
+  return `
+    <div class="divisions-table-wrapper">
+      <table class="divisions-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Level</th>
+            <th>Last Login</th>
+            <th>Last Active</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${admins.map(a => `
+            <tr>
+              <td><span class="online-dot ${isOnline(a.last_seen_at) ? 'on' : 'off'}"></span>${isOnline(a.last_seen_at) ? 'Online' : 'Offline'}</td>
+              <td><strong>${a.name || '(not set)'}</strong></td>
+              <td>${a.email || '-'}</td>
+              <td><span class="badge active">${a.admin_level}</span> ${adminLevelName(a.admin_level)}</td>
+              <td>${timeAgo(a.last_sign_in_at)}</td>
+              <td>${timeAgo(a.last_seen_at)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
     </div>
   `;
+}
 
-  document.getElementById('dashboardCards').innerHTML = cardsHTML;
+async function loadDashboardActivity() {
+  const panel = document.getElementById('dashboardActivity');
+  if (!panel) return;
+
+  try {
+    const admins = await fetchAdminActivity();
+    panel.innerHTML = `
+      <h3>Admin Activity (${admins.length})</h3>
+      ${renderAdminActivityTable(admins)}
+    `;
+  } catch (err) {
+    panel.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+async function loadDashboard(level) {
+  const cards = [];
+
+  cards.push(`
+    <div class="dashboard-card" onclick="navigateTo('leagues')">
+      <div class="card-icon">🏆</div>
+      <h3 class="card-title">Leagues</h3>
+      <p class="card-description">${level >= 7 ? 'Manage leagues, divisions and assignments' : level >= 4 ? 'View divisions and update member details' : 'View leagues and divisions'}</p>
+      <button class="card-button">${level >= 7 ? 'Manage Leagues' : 'View Leagues'}</button>
+    </div>
+  `);
+
+  if (level >= 4) {
+    cards.push(`
+      <div class="dashboard-card" onclick="navigateTo('users')">
+        <div class="card-icon">👥</div>
+        <h3 class="card-title">Users</h3>
+        <p class="card-description">${level >= 7 ? 'View, create and edit user profiles' : 'View all user profiles'}</p>
+        <button class="card-button">${level >= 7 ? 'Manage Users' : 'View Users'}</button>
+      </div>
+    `);
+  }
+
+  if (level >= 7) {
+    cards.push(`
+      <div class="dashboard-card" onclick="navigateTo('admin-manage')">
+        <div class="card-icon">⚙️</div>
+        <h3 class="card-title">Admin Management</h3>
+        <p class="card-description">${level >= 9 ? 'Adjust admin levels and permissions' : 'View admins and grant Viewer or Junior Admin access'}</p>
+        <button class="card-button">Manage Admins</button>
+      </div>
+    `);
+  }
+
+  cards.push(`
+    <div class="dashboard-card site-card" onclick="window.open('https://superleagueff.org', '_blank')">
+      <div class="card-icon">🌐</div>
+      <h3 class="card-title">superleagueff.org</h3>
+      <p class="card-description">Visit the public Super League site</p>
+      <button class="card-button">Open Site</button>
+    </div>
+  `);
+
+  document.getElementById('dashboardCards').innerHTML = cards.join('');
+
+  if (level >= 7) {
+    const section = document.getElementById('dashboard');
+    if (section && !document.getElementById('dashboardActivity')) {
+      const panel = document.createElement('div');
+      panel.id = 'dashboardActivity';
+      panel.className = 'dashboard-activity';
+      panel.innerHTML = '<div class="loading">Loading admin activity...</div>';
+      section.appendChild(panel);
+    }
+    loadDashboardActivity();
+  }
 }
 
 function navigateTo(section) {
@@ -154,7 +271,7 @@ async function loadAllUsers() {
       throw new Error('No auth token found');
     }
 
-    if (adminLevel === 0) {
+    if (adminLevel < 4) {
       document.getElementById('usersContent').innerHTML = '<div class="error">You do not have permission to view users.</div>';
       return;
     }
@@ -178,10 +295,6 @@ async function loadAllUsers() {
     if (!users || users.length === 0) {
       document.getElementById('usersContent').innerHTML = '<div class="loading">No users found</div>';
       return;
-    }
-
-    if (adminLevel === 1) {
-      users = users.filter(u => u.assigned_division);
     }
 
     const historyMap = await fetchLeagueHistory(users.map(u => u.id));
@@ -1085,7 +1198,7 @@ function renderDivisionsView() {
             const stageName = STAGE_NAMES[d.league_stage] || `Stage ${d.league_stage}`;
             return `
             <tr>
-              <td><strong><a class="division-link" onclick="viewDivisionDetails('${d.id}')">${d.division_name}</a></strong></td>
+              <td><strong>${adminLevel >= 4 ? `<a class="division-link" onclick="viewDivisionDetails('${d.id}')">${d.division_name}</a>` : d.division_name}</strong></td>
               <td>${d.mfl_id || '-'}</td>
               <td>${d.sleeper_id || '-'}</td>
               <td>${d.draftboard_url ? `<a href="${d.draftboard_url}" target="_blank">View</a>` : '-'}</td>
@@ -1279,7 +1392,7 @@ async function loadDivisionTeams(divisionId) {
             
             const slffid = profile.slffid || profile.id.substring(0, 8);
             
-            const draftSpotCell = adminLevel >= 7
+            const draftSpotCell = adminLevel >= 4
               ? `<div class="editable-cell"><span class="editable-spot" onclick="updateDraftSpot('${member.id}', '${divisionId}', '${member.user_id}', ${member.draft_spot || 'null'})">${member.draft_spot || '-'}</span><button class="btn-inline-update" onclick="updateDraftSpot('${member.id}', '${divisionId}', '${member.user_id}', ${member.draft_spot || 'null'})">✎</button></div>`
               : `<strong>${member.draft_spot || '-'}</strong>`;
             
@@ -2373,7 +2486,9 @@ async function loadAdminManagement() {
   container.innerHTML = '<div class="loading">Loading admin management...</div>';
 
   const myLevel = currentProfile.admin_level || 0;
-  const canManage = myLevel >= 9;
+  const canManage = myLevel >= 7;
+  const isSuper = myLevel >= 9;
+  const grantable = isSuper ? ADMIN_LEVELS : ADMIN_LEVELS.filter(l => l.value <= 4);
   const token = localStorage.getItem('sb-auth-token');
 
   try {
@@ -2392,6 +2507,7 @@ async function loadAdminManagement() {
     container.innerHTML = `
       ${canManage ? `
         <div class="admin-grant">
+          <button class="section-button" onclick="showCreateUserModal()">+ Create New User</button>
           <h3>Grant Admin Access</h3>
           <p class="hint">Search for any member, then choose the level to give them.</p>
           <input type="text" id="admin-search" placeholder="Search by name or email...">
@@ -2416,6 +2532,7 @@ async function loadAdminManagement() {
               ${admins.map(a => {
                 const isSelf = a.id === currentProfile.id;
                 const lastSuper = a.admin_level === 9 && superAdmins <= 1;
+                const outOfReach = !isSuper && a.admin_level > 4;
                 return `
                 <tr>
                   <td><strong>${a.name || '(not set)'}</strong>${isSelf ? ' <span class="platform-tag">you</span>' : ''}</td>
@@ -2424,11 +2541,11 @@ async function loadAdminManagement() {
                   <td>${adminLevelName(a.admin_level)}</td>
                   ${canManage ? `
                     <td>
-                      ${isSelf || lastSuper
-                        ? `<span class="platform-tag">${isSelf ? 'cannot edit own level' : 'last super admin'}</span>`
+                      ${isSelf || lastSuper || outOfReach
+                        ? `<span class="platform-tag">${isSelf ? 'cannot edit own level' : outOfReach ? 'super admin only' : 'last super admin'}</span>`
                         : `
                           <select class="level-select" onchange="changeAdminLevel('${a.id}', this.value, '${(a.name || a.email || '').replace(/'/g, "\\'")}')">
-                            ${ADMIN_LEVELS.map(l => `<option value="${l.value}" ${l.value === a.admin_level ? 'selected' : ''}>${l.value} - ${l.name}</option>`).join('')}
+                            ${grantable.map(l => `<option value="${l.value}" ${l.value === a.admin_level ? 'selected' : ''}>${l.value} - ${l.name}</option>`).join('')}
                             <option value="0">0 - Remove access</option>
                           </select>
                         `}
@@ -2440,6 +2557,11 @@ async function loadAdminManagement() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div class="admin-activity-panel" id="adminActivityPanel">
+        <h3>Admin Activity</h3>
+        <div class="loading">Loading...</div>
       </div>
 
       <div class="admin-legend">
@@ -2460,8 +2582,143 @@ async function loadAdminManagement() {
       const input = document.getElementById('admin-search');
       input.addEventListener('input', () => searchAdminCandidates(input.value));
     }
+
+    try {
+      const activity = await fetchAdminActivity();
+      document.getElementById('adminActivityPanel').innerHTML =
+        `<h3>Admin Activity</h3>` + renderAdminActivityTable(activity);
+    } catch (err) {
+      document.getElementById('adminActivityPanel').innerHTML =
+        `<h3>Admin Activity</h3><div class="error">${err.message}</div>`;
+    }
   } catch (err) {
     container.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+async function showCreateUserModal() {
+  const myLevel = currentProfile.admin_level || 0;
+  if (myLevel < 7) {
+    alert('You do not have permission to create users.');
+    return;
+  }
+
+  const isSuper = myLevel >= 9;
+  const levels = isSuper ? ADMIN_LEVELS : ADMIN_LEVELS.filter(l => l.value <= 4);
+
+  let nextId = '';
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=slffid&order=slffid.desc&limit=1`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      const highest = rows.length && /^\d+$/.test(rows[0].slffid) ? parseInt(rows[0].slffid, 10) : 1000;
+      nextId = String(highest + 1);
+    }
+  } catch (err) {
+    console.error('Could not read highest SLFF ID:', err);
+  }
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content division-modal">
+      <button class="modal-close" onclick="this.closest('.modal').remove()">✕</button>
+      <h3>Create New User</h3>
+      <p class="host-note">Creates the login and the profile. Password will be SLFF + their SLFF ID.</p>
+
+      <div class="form-group">
+        <label for="new-user-name">Full Name</label>
+        <input type="text" id="new-user-name" placeholder="Jane Smith">
+      </div>
+
+      <div class="form-group">
+        <label for="new-user-email">Email</label>
+        <input type="email" id="new-user-email" placeholder="jane@example.com">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="new-user-slffid">SLFF ID</label>
+          <input type="text" id="new-user-slffid" value="${nextId}">
+        </div>
+
+        <div class="form-group">
+          <label for="new-user-level">Admin Level</label>
+          <select id="new-user-level">
+            <option value="0" selected>0 - User (no dashboard)</option>
+            ${levels.map(l => `<option value="${l.value}">${l.value} - ${l.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-button" onclick="saveNewUser()">Create User</button>
+        <button class="modal-button cancel-btn" onclick="this.closest('.modal').remove()">Cancel</button>
+        <div id="create-user-message"></div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+async function saveNewUser() {
+  const payload = {
+    name: document.getElementById('new-user-name').value.trim(),
+    email: document.getElementById('new-user-email').value.trim(),
+    slffid: document.getElementById('new-user-slffid').value.trim(),
+    admin_level: parseInt(document.getElementById('new-user-level').value, 10)
+  };
+
+  const messageEl = document.getElementById('create-user-message');
+  messageEl.style.marginTop = '10px';
+
+  if (!payload.name || !payload.email || !payload.slffid) {
+    messageEl.textContent = 'Name, email and SLFF ID are all required';
+    messageEl.style.color = '#dc2626';
+    return;
+  }
+
+  const button = document.querySelector('.modal-actions .modal-button:not(.cancel-btn)');
+  button.disabled = true;
+  button.style.opacity = '0.6';
+  messageEl.textContent = 'Creating...';
+  messageEl.style.color = '#8fa3b5';
+
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+
+    if (!res.ok || result.error) {
+      throw new Error(result.error || `Failed (${res.status})`);
+    }
+
+    messageEl.textContent = `Created. Password is ${result.password}`;
+    messageEl.style.color = '#16a34a';
+
+    setTimeout(() => {
+      const modal = document.querySelector('.modal');
+      if (modal) modal.remove();
+      loadAdminManagement();
+    }, 2500);
+  } catch (err) {
+    button.disabled = false;
+    button.style.opacity = '1';
+    messageEl.textContent = 'Error: ' + err.message;
+    messageEl.style.color = '#dc2626';
   }
 }
 
@@ -2502,7 +2759,7 @@ async function searchAdminCandidates(query) {
           ${u.admin_level > 0 ? `<span class="badge active">${u.admin_level}</span>` : ''}
         </div>
         <select class="level-select" id="grant-${u.id}">
-          ${ADMIN_LEVELS.map(l => `<option value="${l.value}">${l.value} - ${l.name}</option>`).join('')}
+          ${grantable.map(l => `<option value="${l.value}">${l.value} - ${l.name}</option>`).join('')}
         </select>
         <button class="btn-action" onclick="grantAdmin('${u.id}', '${(u.name || u.email || '').replace(/'/g, "\\'")}')">Grant</button>
       </div>
