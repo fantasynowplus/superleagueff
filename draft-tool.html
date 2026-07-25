@@ -4,11 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Draft Tool — Super League</title>
-<meta name="description" content="Current standings for Super League, a charity fantasy football league.">
+<meta name="description" content="Draft Central for Super League — league-wide ADP, who-drafted-him, draft trends, and your personal draft recap graphic.">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/standings.css">
 <link rel="stylesheet" href="css/tools.css">
-<script src="js/analytics.js"></script>  
+<link rel="stylesheet" href="css/draft.css">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="js/analytics.js"></script>
 </head>
 <body>
 
@@ -30,61 +32,97 @@
   </div>
 </header>
 
-<section class="hero" style="padding-bottom: 40px;">
+<section class="draft-central-hero">
   <div class="wrap">
-    <div class="eyebrow">Your Roster</div>
-    <h1>The <em>winning</em> team.</h1>
-    <p class="lede">Show off your team with the world by instantly creating a graphic with every draft pick</p>
+    <div class="dc-brand">
+      <img src="./assets/images/League-Logo.png" alt="Super League" class="dc-logo">
+      <div>
+        <h1>Draft Central</h1>
+        <p id="leagueLabel">Loading…</p>
+      </div>
+    </div>
+    <div class="last-sync" id="lastSync"></div>
   </div>
 </section>
 
-<main class="page-container" style="padding: 40px 20px; max-width: 800px; margin: 40px auto; text-align: center;">
+<nav class="tabs wrap">
+  <button class="tab active" data-tab="dashboard">Dashboard</button>
+  <button class="tab" data-tab="adp">ADP</button>
+  <button class="tab" data-tab="who">Who Drafted Him?</button>
+  <button class="tab" data-tab="recap">My Recap</button>
+</nav>
 
-    <h1 style="text-align: center; color: white;">Draft Recap</h1>
-    
+<main class="draft-main wrap">
+
+  <section id="tab-dashboard" class="tab-panel active">
+    <div id="dashboardBody"><div class="loading">Loading draft data…</div></div>
+  </section>
+
+  <section id="tab-adp" class="tab-panel">
+    <div class="panel-head">
+      <h2>Average Draft Position</h2>
+      <input type="text" id="adpSearch" class="search" placeholder="Search player or team…">
+    </div>
+    <div id="adpBody"><div class="loading">Loading…</div></div>
+  </section>
+
+  <section id="tab-who" class="tab-panel">
+    <div class="panel-head">
+      <h2>Who Drafted Him?</h2>
+      <input type="text" id="whoSearch" class="search" placeholder="Type a player name…" autocomplete="off">
+    </div>
+    <div id="whoSuggest" class="suggest"></div>
+    <div id="whoBody"><div class="empty-state">Search for a player to see every division that drafted him.</div></div>
+  </section>
+
+  <section id="tab-recap" class="tab-panel">
+    <div class="recap-intro">
+      <h2>My Draft Recap</h2>
+      <p>Show off your team by instantly creating a graphic with every draft pick.</p>
+    </div>
+
     <div class="form-content" style="padding: 20px;">
-
-    <div id="inputContainer" class="sfb-input-group" style="width: 100%; margin-bottom: 20px;">
+      <div id="inputContainer" class="sfb-input-group" style="width: 100%; margin-bottom: 20px;">
         <div style="width: 100%; margin-bottom: 20px;">
-            <label for="platform" style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: bold;">Select Platform:</label>
-            <select id="platform" class="tool-select" onchange="handlePlatformChange()" style="width: 100%; max-width: 600px;">
-                <option value="sleeper">Sleeper</option>
-                <option value="mfl">MyFantasyLeague</option>
-            </select>
+          <label for="platform" style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: bold;">Select Platform:</label>
+          <select id="platform" class="tool-select" onchange="handlePlatformChange()" style="width: 100%; max-width: 600px;">
+            <option value="sleeper">Sleeper</option>
+            <option value="mfl">MyFantasyLeague</option>
+          </select>
         </div>
 
         <div id="sleeperInputs" style="width: 100%; display: block;">
-            <label for="username" style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: bold;">Sleeper Username:</label>
-            <input type="text" id="username" class="tool-input" placeholder="Enter your Sleeper username" style="width: 100%; max-width: 600px;">
+          <label for="username" style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: bold;">Sleeper Username:</label>
+          <input type="text" id="username" class="tool-input" placeholder="Enter your Sleeper username" style="width: 100%; max-width: 600px;">
         </div>
 
         <div id="mflInputs" style="width: 100%; display: none;">
-            <label for="mflFranchise" style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: bold;">Select Your Franchise:</label>
-            <select id="mflFranchise" class="tool-select" style="width: 100%; max-width: 600px;">
-                <option value="">Select a franchise</option>
-            </select>
+          <label for="mflFranchise" style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: bold;">Select Your Franchise:</label>
+          <select id="mflFranchise" class="tool-select" style="width: 100%; max-width: 600px;">
+            <option value="">Select a franchise</option>
+          </select>
         </div>
-    </div>
+      </div>
 
-        <button class="tool-btn btn-find" style="margin: 15px auto; display: block; max-width: 600px;" onclick="generateGraphic()">
-            GENERATE #SLFF4 GRAPHIC
-        </button>
+      <button class="tool-btn btn-find" style="margin: 15px auto; display: block; max-width: 600px;" onclick="generateGraphic()">
+        GENERATE #SLFF4 GRAPHIC
+      </button>
 
-    <div id="loader" class="loader">SYNCING DRAFT DATA...</div>
+      <div id="loader" class="loader">SYNCING DRAFT DATA...</div>
 
-    <canvas id="canvas" style="display:none;"></canvas>
+      <canvas id="canvas" style="display:none;"></canvas>
 
-    <div id="resultContainer" style="margin-top: 30px;">
+      <div id="resultContainer" style="margin-top: 30px;">
         <img id="finalImage" style="max-width: 100%; display: none; border-radius: 8px; border: 1px solid #334155;" alt="Draft Recap Output">
-    </div>
-    
-    <button id="downloadBtn" class="tool-btn btn-dl" style="display:none; margin: 20px auto; max-width: 600px;" onclick="downloadImg()">
-        DOWNLOAD DRAFT IMAGE
-    </button>
-    </div> 
-</main>
+      </div>
 
-<script src="js/draft-recap-generator.js"></script>
+      <button id="downloadBtn" class="tool-btn btn-dl" style="display:none; margin: 20px auto; max-width: 600px;" onclick="downloadImg()">
+        DOWNLOAD DRAFT IMAGE
+      </button>
+    </div>
+  </section>
+
+</main>
 
 <footer class="site-footer">
   <div class="wrap">
@@ -98,7 +136,10 @@
   </div>
 </footer>
 
-  <script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/draft.js"></script>
+<script src="js/draft-recap-generator.js"></script>
+<script src="js/main.js"></script>
 
 </body>
 </html>
