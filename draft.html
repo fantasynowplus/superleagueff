@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draft Central — Super League</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/draft.css">
+</head>
+<body>
+  <header class="draft-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-mark">SL</span>
+        <div>
+          <h1>Draft Central</h1>
+          <p id="leagueLabel">Loading…</p>
+        </div>
+      </div>
+      <div class="last-sync" id="lastSync"></div>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="adp">ADP</button>
+      <button class="tab" data-tab="who">Who Drafted Him?</button>
+    </nav>
+  </header>
+
+  <main class="draft-main">
+    <section id="tab-dashboard" class="tab-panel active">
+      <div id="dashboardBody"><div class="loading">Loading draft data…</div></div>
+    </section>
+
+    <section id="tab-adp" class="tab-panel">
+      <div class="panel-head">
+        <h2>Average Draft Position</h2>
+        <input type="text" id="adpSearch" class="search" placeholder="Search player or team…">
+      </div>
+      <div id="adpBody"><div class="loading">Loading…</div></div>
+    </section>
+
+    <section id="tab-who" class="tab-panel">
+      <div class="panel-head">
+        <h2>Who Drafted Him?</h2>
+        <input type="text" id="whoSearch" class="search" placeholder="Type a player name…" autocomplete="off">
+      </div>
+      <div id="whoSuggest" class="suggest"></div>
+      <div id="whoBody"><div class="empty-state">Search for a player to see every division that drafted him.</div></div>
+    </section>
+  </main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/draft.js"></script>
+</body>
+</html>
