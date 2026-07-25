@@ -67,7 +67,10 @@ async function sb(path, opts = {}) {
     }
   });
   if (!res.ok) throw new Error(`Supabase ${path} -> ${res.status}: ${await res.text()}`);
-  return res.status === 204 ? null : res.json();
+  if (res.status === 204) return null;
+  const t = await res.text();
+  if (!t || t.trim() === '') return null;
+  try { return JSON.parse(t); } catch { return null; }
 }
 
 async function getActiveDivisions() {
