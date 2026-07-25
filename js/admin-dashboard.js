@@ -1103,7 +1103,7 @@ async function loadNotLoggedIn() {
               <th>Username</th>
               <th>Division</th>
               <th>Invite Link</th>
-              <th>Invite</th>
+              <th>Send Invite</th>
             </tr>
           </thead>
           <tbody>
@@ -1112,7 +1112,17 @@ async function loadNotLoggedIn() {
               const d = byId[r.division_id] || {};
               const isMfl = !!d.mfl_id;
               const username = isMfl ? p.mfl_handle : p.sleeper_handle;
+              const canInvite = (currentProfile.admin_level || 0) >= 4 && p.email && d.invite_link;
               return `
+              <tr id="invite-row-${r.id}">
+                <td>${p.name || '(not set)'}</td>
+                <td>${p.email || '-'}</td>
+                <td>${username || '<span class="missing-handle">not set</span>'}</td>
+                <td>${d.division_name || '-'} <span class="platform-tag">${isMfl ? 'MFL' : 'Sleeper'}</span></td>
+                <td>${d.invite_link ? `<a href="${d.invite_link}" target="_blank">Join</a>` : '-'}</td>
+                <td>${canInvite ? `<button class="btn-action" onclick="sendInvite('${r.id}', this)">Send</button>` : '<span class="platform-tag">-</span>'}</td>
+              </tr>
+            `;
               <tr>
                 <td>${p.name || '(not set)'}</td>
                 <td>${p.email || '-'}</td>
@@ -1128,6 +1138,61 @@ async function loadNotLoggedIn() {
     `;
   } catch (err) {
     container.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+async function callInviteFunction(memberIds) {
+  const token = localStorage.getItem('sb-auth-token');
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/send-invite`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ member_ids: memberIds })
+  });
+  const result = await res.json();
+  if (!res.ok || result.error) throw new Error(result.error || `Failed (${res.status})`);
+  return result;
+}
+
+async function sendInvite(memberId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  try {
+    const result = await callInviteFunction([memberId]);
+    const r = result.results[0];
+    if (r && r.ok) {
+      btn.textContent = 'Sent ✓';
+      btn.style.opacity = '0.6';
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Retry';
+      alert('Could not send: ' + (r ? r.error : 'unknown error'));
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Retry';
+    alert('Error: ' + err.message);
+  }
+}
+
+async function sendAllInvites() {
+  const buttons = [...document.querySelectorAll('[id^="invite-row-"] .btn-action')]
+    .filter(b => b.textContent === 'Send' || b.textContent === 'Retry');
+
+  if (buttons.length === 0) {
+    alert('No pending invites to send.');
+    return;
+  }
+  if (!confirm(`Send invites to ${buttons.length} member(s)?`)) return;
+
+  for (const btn of buttons) {
+    const row = btn.closest('[id^="invite-row-"]');
+    const memberId = row.id.replace('invite-row-', '');
+    await sendInvite(memberId, btn);
+    await new Promise(r => setTimeout(r, 400));
   }
 }
 
