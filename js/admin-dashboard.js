@@ -90,6 +90,26 @@ function setupEventListeners(level) {
     });
   });
 
+  const menuToggle = document.getElementById('menuToggle');
+  const sidebar = document.querySelector('.admin-sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+
+  function closeDrawer() {
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('show');
+  }
+
+  if (menuToggle && sidebar && overlay) {
+    menuToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('show');
+    });
+    overlay.addEventListener('click', closeDrawer);
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', closeDrawer);
+    });
+  }
+
   document.getElementById('sidebarLogout').addEventListener('click', logout);
   document.getElementById('headerLogout').addEventListener('click', logout);
 
@@ -2609,20 +2629,16 @@ async function showCreateUserModal() {
   let nextId = '';
   try {
     const token = localStorage.getItem('sb-auth-token');
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/next_slffid`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${token}`
-      },
-      body: '{}'
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=slffid&order=slffid.desc&limit=1`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) {
-      nextId = (await res.json()) || '';
+      const rows = await res.json();
+      const highest = rows.length && /^\d+$/.test(rows[0].slffid) ? parseInt(rows[0].slffid, 10) : 1000;
+      nextId = String(highest + 1);
     }
   } catch (err) {
-    console.error('Could not read next SLFF ID:', err);
+    console.error('Could not read highest SLFF ID:', err);
   }
 
   const modal = document.createElement('div');
@@ -2727,8 +2743,6 @@ async function saveNewUser() {
 }
 
 async function searchAdminCandidates(query) {
-  const isSuper = (currentProfile.admin_level || 0) >= 9;
-  const grantable = isSuper ? ADMIN_LEVELS : ADMIN_LEVELS.filter(l => l.value <= 4);
   const results = document.getElementById('admin-search-results');
   if (!results) return;
 
