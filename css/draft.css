@@ -210,3 +210,35 @@ table.data tbody tr:hover { background: rgba(226,111,15,0.06); }
   .search { min-width: 0; width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+
+/* ---- Merged into site page ---- */
+.draft-central-hero {
+  border-bottom: 1px solid var(--rule);
+  padding: 28px 0 20px;
+}
+.draft-central-hero .wrap {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+}
+.dc-brand { display: flex; align-items: center; gap: 16px; }
+.dc-logo { height: 52px; width: auto; display: block; }
+.dc-brand h1 {
+  font-family: Anton, sans-serif; font-weight: 400;
+  font-size: 30px; letter-spacing: 0.5px; text-transform: uppercase;
+  color: #fff; line-height: 1;
+}
+.dc-brand p { color: var(--orange); font-size: 13px; font-weight: 600; margin-top: 4px; }
+
+nav.tabs.wrap {
+  display: flex; gap: 4px; border-bottom: 1px solid var(--rule);
+  margin-top: 0; margin-bottom: 0; padding-top: 8px;
+}
+.draft-main.wrap { padding-top: 30px; padding-bottom: 70px; }
+
+.recap-intro { margin-bottom: 20px; }
+.recap-intro h2 {
+  font-family: Anton, sans-serif; font-weight: 400; font-size: 22px;
+  text-transform: uppercase; letter-spacing: 0.5px; color: #fff;
+}
+.recap-intro p { color: var(--dim); font-size: 14px; margin-top: 6px; }
+#tab-recap .form-content { text-align: center; }
