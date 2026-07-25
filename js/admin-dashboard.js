@@ -1123,14 +1123,6 @@ async function loadNotLoggedIn() {
                 <td>${canInvite ? `<button class="btn-action" onclick="sendInvite('${r.id}', this)">Send</button>` : '<span class="platform-tag">-</span>'}</td>
               </tr>
             `;
-              <tr>
-                <td>${p.name || '(not set)'}</td>
-                <td>${p.email || '-'}</td>
-                <td>${username || '<span class="missing-handle">not set</span>'}</td>
-                <td>${d.division_name || '-'} <span class="platform-tag">${isMfl ? 'MFL' : 'Sleeper'}</span></td>
-                <td>${d.invite_link ? `<a href="${d.invite_link}" target="_blank">Join</a>` : '-'}</td>
-              </tr>
-            `;
             }).join('')}
           </tbody>
         </table>
