@@ -1090,7 +1090,10 @@ async function loadNotLoggedIn() {
     });
 
     container.innerHTML = `
-      <p class="not-linked-count">${rows.length} not logged in</p>
+      <div class="not-linked-head">
+        <p class="not-linked-count">${rows.length} not logged in</p>
+        ${(currentProfile.admin_level || 0) >= 7 ? `<button class="section-button" onclick="sendAllInvites()">Send All Invites</button>` : ''}
+      </div>
       <div class="divisions-table-wrapper">
         <table class="divisions-table">
           <thead>
@@ -1100,6 +1103,7 @@ async function loadNotLoggedIn() {
               <th>Username</th>
               <th>Division</th>
               <th>Invite Link</th>
+              <th>Invite</th>
             </tr>
           </thead>
           <tbody>
