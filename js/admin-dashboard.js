@@ -1092,7 +1092,7 @@ async function loadNotLoggedIn() {
     container.innerHTML = `
       <div class="not-linked-head">
         <p class="not-linked-count">${rows.length} not logged in</p>
-        ${(currentProfile.admin_level || 0) >= 7 ? `<button class="section-button" onclick="sendAllInvites()">Send All Invites</button>` : ''}
+        ${(currentProfile.admin_level || 0) >= 7 ? `<div class="not-linked-actions"><button class="section-button" id="refreshLinkedBtn" onclick="refreshLinkStatus()">Refresh Link Status</button><button class="section-button" onclick="sendAllInvites()">Send All Invites</button></div>` : ''}
       </div>
       <div class="divisions-table-wrapper">
         <table class="divisions-table">
@@ -1167,6 +1167,42 @@ async function sendInvite(memberId, btn) {
     btn.disabled = false;
     btn.textContent = 'Retry';
     alert('Error: ' + err.message);
+  }
+}
+
+async function refreshLinkStatus() {
+  const btn = document.getElementById('refreshLinkedBtn');
+  if (!btn) return;
+
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Refreshing...';
+
+  try {
+    const token = localStorage.getItem('sb-auth-token');
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/trigger-sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`
+      },
+      body: '{}'
+    });
+
+    const result = await res.json();
+    if (!res.ok || result.error) throw new Error(result.error || `Failed (${res.status})`);
+
+    btn.textContent = 'Sync started...';
+
+    setTimeout(() => {
+      btn.textContent = 'Reloading...';
+      loadNotLoggedIn();
+    }, 45000);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = original;
+    alert('Could not start sync: ' + err.message);
   }
 }
 
