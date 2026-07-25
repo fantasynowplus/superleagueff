@@ -242,3 +242,6 @@ nav.tabs.wrap {
 }
 .recap-intro p { color: var(--dim); font-size: 14px; margin-top: 6px; }
 #tab-recap .form-content { text-align: center; }
+
+.last-sync { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; }
+.sync-next { color: var(--orange); }
