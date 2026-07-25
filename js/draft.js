@@ -2,7 +2,7 @@ const SUPABASE_URL = 'https://fckobcxprmudfpxdmswi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZja29iY3hwcm11ZGZweGRtc3dpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MTI5MzcsImV4cCI6MjA5OTE4ODkzN30.9wMb0SXAZs-jo1G9xRxk5M47fJIIU7-DTJTl1yFRwFk';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let PICKS = [];   
+let PICKS = []; let LAST_SYNC = null;   
 let ADP = [];     
 let DIVISIONS = {}; 
 
@@ -33,10 +33,8 @@ async function loadData() {
       `${divs[0].leagues.league_name} · ${divs[0].leagues.year}`;
   }
   const syncTimes = PICKS.map(p => p.synced_at).filter(Boolean).sort();
-  if (syncTimes.length) {
-    document.getElementById('lastSync').textContent =
-      'Updated ' + new Date(syncTimes[syncTimes.length - 1]).toLocaleString();
-  }
+    LAST_SYNC = syncTimes.length ? new Date(syncTimes[syncTimes.length - 1]) : null;
+    renderSyncLine();
 }
 
 // ---------- Dashboard ----------
@@ -225,6 +223,33 @@ function renderWho(matchKey) {
   `;
 }
 
+function nextScheduledSync() {
+  // draft-sync runs at :00 and :30 past each hour
+  const now = new Date();
+  const next = new Date(now);
+  const m = now.getMinutes();
+  if (m < 30) next.setMinutes(30, 0, 0);
+  else { next.setHours(now.getHours() + 1); next.setMinutes(0, 0, 0); }
+  return next;
+}
+
+function relativeMinutes(target) {
+  const diff = Math.round((target - new Date()) / 60000);
+  if (diff <= 0) return 'any moment';
+  if (diff === 1) return 'in 1 min';
+  return `in ${diff} min`;
+}
+
+function renderSyncLine() {
+  const el = document.getElementById('lastSync');
+  if (!el) return;
+  const last = LAST_SYNC
+    ? `Updated ${LAST_SYNC.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+    : 'Not yet synced';
+  const next = `Next update ~${relativeMinutes(nextScheduledSync())}`;
+  el.innerHTML = `<span>${last}</span><span class="sync-next">${next}</span>`;
+}
+
 function setupTabs() {
   document.querySelectorAll('.tab').forEach(tab =>
     tab.addEventListener('click', () => {
@@ -249,6 +274,7 @@ async function init() {
     document.getElementById('dashboardBody').innerHTML =
       `<div class="empty-state">Could not load draft data. ${esc(err.message)}</div>`;
   }
+  setInterval(renderSyncLine, 30000);
 }
 
 init();
