@@ -1,10 +1,10 @@
 const SUPABASE_URL = 'https://fckobcxprmudfpxdmswi.supabase.co';
-const SUPABASE_ANON_KEY = 'REPLACE_WITH_YOUR_ANON_KEY';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZja29iY3hwcm11ZGZweGRtc3dpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MTI5MzcsImV4cCI6MjA5OTE4ODkzN30.9wMb0SXAZs-jo1G9xRxk5M47fJIIU7-DTJTl1yFRwFk';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let PICKS = [];   // all picks for active divisions
-let ADP = [];     // rows from draft_adp view
-let DIVISIONS = {}; // id -> division_name
+let PICKS = [];   
+let ADP = [];     
+let DIVISIONS = {}; 
 
 function esc(s) {
   return (s == null ? '' : String(s)).replace(/[&<>"']/g, c =>
@@ -16,7 +16,6 @@ function posBadge(pos) {
   return `<span class="pos-badge ${esc(p)}">${esc(p || '—')}</span>`;
 }
 
-// ---------- data load ----------
 async function loadData() {
   const [{ data: divs }, { data: picks }, { data: adp }] = await Promise.all([
     db.from('divisions').select('id,division_name,is_active,leagues!inner(league_name,year,is_active)').eq('is_active', true).eq('leagues.is_active', true),
@@ -77,7 +76,6 @@ function renderDashboard() {
     </div>`;
   }).join('');
 
-  // Longest positional run: most consecutive picks of same position across the merged board (by overall within a division)
   const runs = {};
   positions.forEach(pos => { runs[pos] = 0; });
   Object.keys(DIVISIONS).forEach(divId => {
@@ -121,7 +119,6 @@ function renderDashboard() {
   `;
 }
 
-// ---------- ADP ----------
 function renderAdp(filter = '') {
   const body = document.getElementById('adpBody');
   if (ADP.length === 0) {
@@ -158,7 +155,6 @@ function renderAdp(filter = '') {
   `;
 }
 
-// ---------- Who Drafted Him ----------
 function renderWhoSuggest(query) {
   const box = document.getElementById('whoSuggest');
   const f = query.trim().toLowerCase();
@@ -229,7 +225,6 @@ function renderWho(matchKey) {
   `;
 }
 
-// ---------- tabs ----------
 function setupTabs() {
   document.querySelectorAll('.tab').forEach(tab =>
     tab.addEventListener('click', () => {
