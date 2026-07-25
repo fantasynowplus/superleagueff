@@ -21,7 +21,41 @@ function pickLabel(round, slot) {
   return `${round}.${String(slot).padStart(2, '0')}`;
 }
 
-// ---------- Supabase helpers ----------
+// Fetch that never throws on a bad body. Returns parsed JSON or null.
+async function safeJson(url, opts = {}, label = 'request') {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(url, opts);
+      if (!res.ok) {
+        if (res.status === 429 || res.status >= 500) {
+          console.error(`  ${label}: HTTP ${res.status}, retrying`);
+          await sleep(3000);
+          continue;
+        }
+        console.error(`  ${label}: HTTP ${res.status}, giving up`);
+        return null;
+      }
+      const text = await res.text();
+      if (!text || text.trim() === '') {
+        return null; // empty body = no data (e.g. draft not started)
+      }
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        console.error(`  ${label}: parse failed at ${text.length} bytes, retrying`);
+        await sleep(3000);
+        continue;
+      }
+    } catch (err) {
+      console.error(`  ${label}: ${err.message}, retrying`);
+      await sleep(3000);
+    }
+  }
+  console.error(`  ${label}: failed after retries`);
+  return null;
+}
+
+// ---------- Supabase ----------
 async function sb(path, opts = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...opts,
@@ -40,6 +74,19 @@ async function getActiveDivisions() {
   return sb('divisions?is_active=eq.true&or=(mfl_id.not.is.null,sleeper_id.not.is.null)&select=id,division_name,mfl_id,sleeper_id,leagues!inner(year,is_active)&leagues.is_active=eq.true');
 }
 
+async function loadPlayerCache(platform) {
+  const map = new Map();
+  const rows = await sb(`nfl_players?platform=eq.${platform}&select=player_id,full_name,position,nfl_team`);
+  rows.forEach(r => map.set(r.player_id, r));
+  return map;
+}
+
+async function cacheAgeHours(platform) {
+  const rows = await sb(`nfl_players?platform=eq.${platform}&select=updated_at&order=updated_at.desc&limit=1`);
+  if (!rows.length) return Infinity;
+  return (Date.now() - new Date(rows[0].updated_at).getTime()) / 3600000;
+}
+
 async function upsertPlayers(platform, rows) {
   for (let i = 0; i < rows.length; i += 500) {
     const slice = rows.slice(i, i + 500).map(r => ({ platform, ...r, updated_at: new Date().toISOString() }));
@@ -54,87 +101,73 @@ async function upsertPlayers(platform, rows) {
 async function replaceDivisionPicks(divisionId, picks) {
   await sb(`draft_picks?division_id=eq.${divisionId}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
   for (let i = 0; i < picks.length; i += 200) {
-    const slice = picks.slice(i, i + 200);
     await sb('draft_picks', {
       method: 'POST',
       headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify(slice)
+      body: JSON.stringify(picks.slice(i, i + 200))
     });
   }
 }
 
 // ---------- Sleeper ----------
 async function sleeperPlayers() {
-  let data = null;
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
-      const res = await fetch('https://api.sleeper.app/v1/players/nfl', {
-        headers: { 'Accept': 'application/json' }
-      });
+      const res = await fetch('https://api.sleeper.app/v1/players/nfl', { headers: { Accept: 'application/json' } });
       if (!res.ok) throw new Error(`status ${res.status}`);
       const body = await res.text();
-      if (body.length < 5000000) throw new Error(`body too small (${body.length} bytes), likely truncated`);
-      data = JSON.parse(body);   // parse INSIDE the try — truncation throws here and retries
-      console.log(`  Sleeper players loaded: ${body.length} bytes, ${Object.keys(data).length} players`);
-      break;
+      if (body.length < 5000000) throw new Error(`body too small (${body.length} bytes)`);
+      const data = JSON.parse(body);
+      const map = new Map();
+      const rows = [];
+      for (const [id, p] of Object.entries(data)) {
+        const name = p.full_name || [p.first_name, p.last_name].filter(Boolean).join(' ');
+        const rec = { player_id: id, full_name: name || null, position: p.position || null, nfl_team: p.team || null };
+        map.set(id, rec);
+        rows.push(rec);
+      }
+      console.log(`  Sleeper players loaded: ${rows.length}`);
+      return { map, rows };
     } catch (err) {
-      console.error(`  Sleeper players attempt ${attempt} failed: ${err.message}`);
-      data = null;
+      console.error(`  Sleeper players attempt ${attempt}: ${err.message}`);
       if (attempt < 4) await sleep(5000);
     }
   }
-  if (!data) throw new Error('Sleeper players unavailable after 4 attempts');
-
-  const map = new Map();
-  const rows = [];
-  for (const [id, p] of Object.entries(data)) {
-    const name = p.full_name || [p.first_name, p.last_name].filter(Boolean).join(' ');
-    const rec = { player_id: id, full_name: name || null, position: p.position || null, nfl_team: p.team || null };
-    map.set(id, rec);
-    rows.push(rec);
-  }
-  return { map, rows };
+  throw new Error('Sleeper players unavailable after 4 attempts');
 }
 
 async function sleeperDraftPicks(sleeperLeagueId) {
-  const leagueRes = await fetch(`https://api.sleeper.app/v1/league/${sleeperLeagueId}`);
-  if (!leagueRes.ok) throw new Error(`Sleeper league -> ${leagueRes.status}`);
-  const league = await leagueRes.json();
-  const draftId = league.draft_id;
-  if (!draftId) return [];
-
-  const picksRes = await fetch(`https://api.sleeper.app/v1/draft/${draftId}/picks`);
-  if (!picksRes.ok) throw new Error(`Sleeper picks -> ${picksRes.status}`);
-  const picks = await picksRes.json();
-  return picks || [];
+  const league = await safeJson(`https://api.sleeper.app/v1/league/${sleeperLeagueId}`, {}, `Sleeper league ${sleeperLeagueId}`);
+  if (!league || !league.draft_id) return [];
+  const picks = await safeJson(`https://api.sleeper.app/v1/draft/${league.draft_id}/picks`, {}, `Sleeper picks ${league.draft_id}`);
+  return Array.isArray(picks) ? picks : [];
 }
 
 // ---------- MFL ----------
 async function mflLogin(year) {
-  const res = await fetch(`https://api.myfantasyleague.com/${year}/login`, {
-    method: 'POST',
-    redirect: 'follow',
-    headers: { 'User-Agent': USER_AGENT, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ USERNAME: MFL_USERNAME, PASSWORD: MFL_PASSWORD, XML: '1' }).toString()
-  });
-  const text = await res.text();
-  const m = text.match(/MFL_USER_ID="([^"]+)"/);
-  if (!m) throw new Error('MFL login failed');
-  return m[1];
+  try {
+    const res = await fetch(`https://api.myfantasyleague.com/${year}/login`, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'User-Agent': USER_AGENT, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ USERNAME: MFL_USERNAME, PASSWORD: MFL_PASSWORD, XML: '1' }).toString()
+    });
+    const text = await res.text();
+    const m = text.match(/MFL_USER_ID="([^"]+)"/);
+    return m ? m[1] : null;
+  } catch (err) {
+    console.error(`  MFL login failed: ${err.message}`);
+    return null;
+  }
 }
 
 async function mflPlayers(year) {
-  const res = await fetch(`https://api.myfantasyleague.com/${year}/export?TYPE=players&DETAILS=1&JSON=1`, {
-    headers: { 'User-Agent': USER_AGENT }
-  });
-  if (!res.ok) throw new Error(`MFL players -> ${res.status}`);
-  const body = await res.json();
-  const raw = body.players && body.players.player;
+  const body = await safeJson(`https://api.myfantasyleague.com/${year}/export?TYPE=players&DETAILS=1&JSON=1`, { headers: { 'User-Agent': USER_AGENT } }, 'MFL players');
+  const raw = body && body.players && body.players.player;
   const arr = Array.isArray(raw) ? raw : raw ? [raw] : [];
   const map = new Map();
   const rows = [];
   for (const p of arr) {
-    // MFL name is "Last, First"
     let name = p.name || '';
     if (name.includes(',')) {
       const [last, first] = name.split(',').map(s => s.trim());
@@ -144,17 +177,15 @@ async function mflPlayers(year) {
     map.set(p.id, rec);
     rows.push(rec);
   }
+  console.log(`  MFL players loaded: ${rows.length}`);
   return { map, rows };
 }
 
 async function mflDraftPicks(mflId, year, cookie) {
-  const res = await fetch(`https://api.myfantasyleague.com/${year}/export?TYPE=draftResults&L=${mflId}&JSON=1`, {
-    redirect: 'follow',
-    headers: { 'User-Agent': USER_AGENT, Cookie: `MFL_USER_ID=${cookie}` }
-  });
-  if (!res.ok) throw new Error(`MFL draftResults -> ${res.status}`);
-  const body = await res.json();
-  const unit = body.draftResults && body.draftResults.draftUnit;
+  const headers = { 'User-Agent': USER_AGENT };
+  if (cookie) headers.Cookie = `MFL_USER_ID=${cookie}`;
+  const body = await safeJson(`https://api.myfantasyleague.com/${year}/export?TYPE=draftResults&L=${mflId}&JSON=1`, { redirect: 'follow', headers }, `MFL draft ${mflId}`);
+  const unit = body && body.draftResults && body.draftResults.draftUnit;
   if (!unit) return [];
   const units = Array.isArray(unit) ? unit : [unit];
   const out = [];
@@ -162,13 +193,8 @@ async function mflDraftPicks(mflId, year, cookie) {
     const raw = u.draftPick || [];
     const picks = Array.isArray(raw) ? raw : [raw];
     picks.forEach(p => {
-      if (!p.player || String(p.player).trim() === '') return; // unmade pick
-      out.push({
-        round: parseInt(p.round, 10),
-        slot: parseInt(p.pick, 10),
-        franchise: p.franchise,
-        player_id: String(p.player).trim()
-      });
+      if (!p.player || String(p.player).trim() === '') return;
+      out.push({ round: parseInt(p.round, 10), slot: parseInt(p.pick, 10), franchise: p.franchise, player_id: String(p.player).trim() });
     });
   });
   return out;
@@ -186,29 +212,38 @@ async function main() {
 
   let sleeperMap = new Map();
   if (hasSleeper) {
-    console.log('Loading Sleeper players...');
-    const sp = await sleeperPlayers();
-    sleeperMap = sp.map;
-    await upsertPlayers('sleeper', sp.rows);
-    console.log(`  ${sp.rows.length} Sleeper players cached`);
+    sleeperMap = await loadPlayerCache('sleeper');
+    const age = await cacheAgeHours('sleeper');
+    if (sleeperMap.size === 0 || age > 20) {
+      console.log(`Refreshing Sleeper players (cache ${sleeperMap.size === 0 ? 'empty' : age.toFixed(1) + 'h'})...`);
+      const sp = await sleeperPlayers();
+      await upsertPlayers('sleeper', sp.rows);
+      sleeperMap = sp.map;
+    } else {
+      console.log(`Using cached Sleeper players (${sleeperMap.size}, ${age.toFixed(1)}h old)`);
+    }
   }
 
   let mflMap = new Map();
   let cookie = null;
   if (hasMfl) {
-    console.log('Loading MFL players...');
-    const mp = await mflPlayers(year);
-    mflMap = mp.map;
-    await upsertPlayers('mfl', mp.rows);
-    console.log(`  ${mp.rows.length} MFL players cached`);
+    mflMap = await loadPlayerCache('mfl');
+    const age = await cacheAgeHours('mfl');
+    if (mflMap.size === 0 || age > 20) {
+      console.log(`Refreshing MFL players (cache ${mflMap.size === 0 ? 'empty' : age.toFixed(1) + 'h'})...`);
+      const mp = await mflPlayers(year);
+      if (mp.rows.length > 0) {
+        await upsertPlayers('mfl', mp.rows);
+        mflMap = mp.map;
+      }
+    } else {
+      console.log(`Using cached MFL players (${mflMap.size}, ${age.toFixed(1)}h old)`);
+    }
     if (MFL_USERNAME && MFL_PASSWORD) {
       cookie = await mflLogin(year);
-      console.log('  MFL login ok');
+      console.log(cookie ? '  MFL login ok' : '  MFL login failed (continuing)');
     }
   }
-
-  const seats = {};
-  divisions.forEach(d => { seats[d.id] = 12; });
 
   let totalPicks = 0;
 
@@ -221,19 +256,14 @@ async function main() {
 
       if (d.mfl_id) {
         const picks = await mflDraftPicks(String(d.mfl_id).trim(), year, cookie);
-        const seatCount = 12;
         rows = picks.map(p => {
           const player = mflMap.get(p.player_id) || {};
-          const overall = (p.round - 1) * seatCount + p.slot;
+          const overall = (p.round - 1) * 12 + p.slot;
           return {
-            division_id: d.id,
-            platform: 'mfl',
-            round: p.round,
-            pick_in_round: p.slot,
-            overall,
+            division_id: d.id, platform: 'mfl',
+            round: p.round, pick_in_round: p.slot, overall,
             pick_label: pickLabel(p.round, p.slot),
-            franchise_id: p.franchise || null,
-            team_name: null,
+            franchise_id: p.franchise || null, team_name: null,
             player_id: p.player_id,
             player_name: player.full_name || null,
             player_position: player.position || null,
@@ -245,20 +275,19 @@ async function main() {
         const picks = await sleeperDraftPicks(String(d.sleeper_id).trim());
         rows = picks.map(p => {
           const player = sleeperMap.get(String(p.player_id)) || {};
+          const meta = p.metadata || {};
+          const metaName = `${meta.first_name || ''} ${meta.last_name || ''}`.trim();
           return {
-            division_id: d.id,
-            platform: 'sleeper',
-            round: p.round,
-            pick_in_round: p.draft_slot,
-            overall: p.pick_no,
+            division_id: d.id, platform: 'sleeper',
+            round: p.round, pick_in_round: p.draft_slot, overall: p.pick_no,
             pick_label: pickLabel(p.round, p.draft_slot),
             franchise_id: p.picked_by || null,
-            team_name: (p.metadata && (p.metadata.team_name || `${p.metadata.first_name || ''} ${p.metadata.last_name || ''}`.trim())) || null,
+            team_name: meta.team_name || metaName || null,
             player_id: String(p.player_id),
-            player_name: player.full_name || (p.metadata ? `${p.metadata.first_name || ''} ${p.metadata.last_name || ''}`.trim() : null),
-            player_position: player.position || (p.metadata && p.metadata.position) || null,
-            player_nfl_team: player.nfl_team || (p.metadata && p.metadata.team) || null,
-            match_key: matchKey(player.full_name || (p.metadata && `${p.metadata.first_name} ${p.metadata.last_name}`), player.position || (p.metadata && p.metadata.position))
+            player_name: player.full_name || metaName || null,
+            player_position: player.position || meta.position || null,
+            player_nfl_team: player.nfl_team || meta.team || null,
+            match_key: matchKey(player.full_name || metaName, player.position || meta.position)
           };
         });
       }
