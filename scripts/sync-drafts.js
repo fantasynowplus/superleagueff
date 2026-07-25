@@ -83,7 +83,13 @@ async function sleeperPlayers() {
   }
   if (!text) throw new Error('Sleeper players unavailable after 3 attempts');
 
-  const data = JSON.parse(text);
+  console.log(`  Sleeper players body: ${text.length} bytes, starts: ${text.slice(0, 80)}`);
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    throw new Error(`Parse failed at ${text.length} bytes; body starts: ${text.slice(0, 200)}`);
+  }
   const map = new Map();
   const rows = [];
   for (const [id, p] of Object.entries(data)) {
