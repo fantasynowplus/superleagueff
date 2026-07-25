@@ -65,31 +65,26 @@ async function replaceDivisionPicks(divisionId, picks) {
 
 // ---------- Sleeper ----------
 async function sleeperPlayers() {
-  let text = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  let data = null;
+  for (let attempt = 1; attempt <= 4; attempt++) {
     try {
       const res = await fetch('https://api.sleeper.app/v1/players/nfl', {
         headers: { 'Accept': 'application/json' }
       });
       if (!res.ok) throw new Error(`status ${res.status}`);
       const body = await res.text();
-      if (body.length < 100000) throw new Error(`body too small (${body.length} bytes)`);
-      text = body;
+      if (body.length < 5000000) throw new Error(`body too small (${body.length} bytes), likely truncated`);
+      data = JSON.parse(body);   // parse INSIDE the try — truncation throws here and retries
+      console.log(`  Sleeper players loaded: ${body.length} bytes, ${Object.keys(data).length} players`);
       break;
     } catch (err) {
       console.error(`  Sleeper players attempt ${attempt} failed: ${err.message}`);
-      if (attempt < 3) await sleep(3000);
+      data = null;
+      if (attempt < 4) await sleep(5000);
     }
   }
-  if (!text) throw new Error('Sleeper players unavailable after 3 attempts');
+  if (!data) throw new Error('Sleeper players unavailable after 4 attempts');
 
-  console.log(`  Sleeper players body: ${text.length} bytes, starts: ${text.slice(0, 80)}`);
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch (err) {
-    throw new Error(`Parse failed at ${text.length} bytes; body starts: ${text.slice(0, 200)}`);
-  }
   const map = new Map();
   const rows = [];
   for (const [id, p] of Object.entries(data)) {
