@@ -65,9 +65,18 @@ async function replaceDivisionPicks(divisionId, picks) {
 
 // ---------- Sleeper ----------
 async function sleeperPlayers() {
-  const res = await fetch('https://api.sleeper.app/v1/players/nfl');
+  const res = await fetch('https://api.sleeper.app/v1/players/nfl', {
+    headers: { 'Accept': 'application/json' }
+  });
   if (!res.ok) throw new Error(`Sleeper players -> ${res.status}`);
-  const data = await res.json();
+  const text = await res.text();
+  if (text.length < 10000) throw new Error(`Sleeper players body too small (${text.length} bytes) — likely truncated`);
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    throw new Error(`Sleeper players JSON parse failed at ${text.length} bytes: ${err.message}`);
+  }
   const map = new Map();
   const rows = [];
   for (const [id, p] of Object.entries(data)) {
