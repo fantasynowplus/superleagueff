@@ -65,18 +65,25 @@ async function replaceDivisionPicks(divisionId, picks) {
 
 // ---------- Sleeper ----------
 async function sleeperPlayers() {
-  const res = await fetch('https://api.sleeper.app/v1/players/nfl', {
-    headers: { 'Accept': 'application/json' }
-  });
-  if (!res.ok) throw new Error(`Sleeper players -> ${res.status}`);
-  const text = await res.text();
-  if (text.length < 10000) throw new Error(`Sleeper players body too small (${text.length} bytes) — likely truncated`);
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch (err) {
-    throw new Error(`Sleeper players JSON parse failed at ${text.length} bytes: ${err.message}`);
+  let text = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch('https://api.sleeper.app/v1/players/nfl', {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const body = await res.text();
+      if (body.length < 100000) throw new Error(`body too small (${body.length} bytes)`);
+      text = body;
+      break;
+    } catch (err) {
+      console.error(`  Sleeper players attempt ${attempt} failed: ${err.message}`);
+      if (attempt < 3) await sleep(3000);
+    }
   }
+  if (!text) throw new Error('Sleeper players unavailable after 3 attempts');
+
+  const data = JSON.parse(text);
   const map = new Map();
   const rows = [];
   for (const [id, p] of Object.entries(data)) {
