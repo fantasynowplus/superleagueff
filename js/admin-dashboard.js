@@ -279,7 +279,8 @@ async function loadDashboard(level) {
 function navigateTo(section) {
   document.querySelector(`[data-section="${section}"]`).click();
 }
-
+let allUsersCache = [];
+let userHistoryCache = {};
 async function loadAllUsers() {
   document.getElementById('usersContent').innerHTML = '<div class="loading">Loading users...</div>';
   
@@ -319,7 +320,14 @@ async function loadAllUsers() {
 
     const historyMap = await fetchLeagueHistory(users.map(u => u.id));
 
+    allUsersCache = users;
+    userHistoryCache = historyMap;
+
     const html = `
+      <div class="users-toolbar">
+        <input type="text" id="userSearchInput" class="user-search-input" placeholder="Search by name, email, handle, or division..." oninput="filterUsers(this.value)">
+        <span id="usersCount" class="users-count">${users.length} of ${users.length}</span>
+      </div>
       <table class="users-table">
         <thead>
           <tr>
@@ -331,17 +339,8 @@ async function loadAllUsers() {
             <th>MFL Handle</th>
           </tr>
         </thead>
-        <tbody>
-          ${users.map(u => `
-            <tr ${adminLevel >= 7 ? `onclick="viewUserProfile('${u.id}')"` : ''}>
-              <td>${adminLevel >= 7 ? `<a class="user-link">${u.name || '(not set)'}</a>` : (u.name || '(not set)')}</td>
-              <td>${u.email}</td>
-              <td>${u.assigned_division || '-'}</td>
-              <td>${formatLeagueHistory(historyMap[u.id])}</td>
-              <td>${u.sleeper_handle || '-'}</td>
-              <td>${u.mfl_handle || '-'}</td>
-            </tr>
-          `).join('')}
+        <tbody id="usersTableBody">
+          ${renderUserRows(users)}
         </tbody>
       </table>
     `;
@@ -352,7 +351,37 @@ async function loadAllUsers() {
     document.getElementById('usersContent').innerHTML = `<div class="error">Error: ${err.message}</div>`;
   }
 }
+function renderUserRows(users) {
+  const adminLevel = currentProfile.admin_level || 0;
+  if (!users.length) {
+    return `<tr><td colspan="6" class="users-empty">No matching users</td></tr>`;
+  }
+  return users.map(u => `
+    <tr ${adminLevel >= 7 ? `onclick="viewUserProfile('${u.id}')"` : ''}>
+      <td>${adminLevel >= 7 ? `<a class="user-link">${u.name || '(not set)'}</a>` : (u.name || '(not set)')}</td>
+      <td>${u.email}</td>
+      <td>${u.assigned_division || '-'}</td>
+      <td>${formatLeagueHistory(userHistoryCache[u.id])}</td>
+      <td>${u.sleeper_handle || '-'}</td>
+      <td>${u.mfl_handle || '-'}</td>
+    </tr>
+  `).join('');
+}
 
+function filterUsers(query) {
+  const q = query.trim().toLowerCase();
+  const filtered = !q ? allUsersCache : allUsersCache.filter(u =>
+    (u.name || '').toLowerCase().includes(q) ||
+    (u.email || '').toLowerCase().includes(q) ||
+    (u.sleeper_handle || '').toLowerCase().includes(q) ||
+    (u.mfl_handle || '').toLowerCase().includes(q) ||
+    (u.assigned_division || '').toLowerCase().includes(q)
+  );
+  const tbody = document.getElementById('usersTableBody');
+  if (tbody) tbody.innerHTML = renderUserRows(filtered);
+  const count = document.getElementById('usersCount');
+  if (count) count.textContent = `${filtered.length} of ${allUsersCache.length}`;
+}
 async function fetchLeagueHistory(userIds) {
   if (!userIds || userIds.length === 0) return {};
 
