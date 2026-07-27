@@ -2867,7 +2867,8 @@ async function searchAdminCandidates(query) {
       results.innerHTML = '<p class="empty">No members found</p>';
       return;
     }
-
+    const isSuper = (currentProfile.admin_level || 0) >= 9;
+    const grantable = isSuper ? ADMIN_LEVELS : ADMIN_LEVELS.filter(l => l.value <= 4);
     results.innerHTML = users.map(u => `
       <div class="admin-search-row">
         <div>
