@@ -270,12 +270,12 @@ function renderBoards() {
       detail = `${divPicks.length} picks in`;
     }
     const link = meta.draftboard_url
-      ? `<a href="${esc(meta.draftboard_url)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;color:var(--orange-bright);font-weight:600;text-decoration:none">Open draft board →</a>`
-      : `<span class="mono" style="color:var(--dim)">No board link</span>`;
+      ? `<a href="${esc(meta.draftboard_url)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;color:#ffffff;font-weight:600;text-decoration:none">Open draft board →</a>`
+      : `<span style="display:inline-block;margin-top:10px;color:var(--dim)">No board link</span>`;
     return `<div class="stat-card">
-      <div class="label">${esc(name)}</div>
-      <div class="value">${esc(status)}</div>
-      <div class="detail">${esc(detail)}</div>
+      <div style="color:var(--orange-bright);font-weight:700;font-size:26px;line-height:1.1;margin-bottom:8px">${esc(name)}</div>
+      <div style="font-size:18px;font-weight:600;margin-bottom:4px">${esc(status)}</div>
+      <div style="color:var(--dim);font-size:13px">${esc(detail)}</div>
       ${link}
     </div>`;
   }).join('');
