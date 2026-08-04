@@ -354,8 +354,8 @@
       <p>Fill this out to reserve your spot — if selected, you will be able to pick your division.</p>
     </div>
     <form class="form-frame" action="https://formspree.io/f/mbdnoznz" method="POST">
-      <label for="manager-name">Manager name</label>
-      <input type="text" id="manager-name" name="manager-name" placeholder="Your name" required>
+      <label for="manager-name">Your name</label>
+      <input type="text" id="your-name" name="your-name" placeholder="Justin Bauerle" required>
       <label for="email">Email</label>
       <input type="email" id="email" name="email" placeholder="you@email.com" required>
       <label for="pref-platform">Preferred platform</label>
@@ -364,8 +364,16 @@
         <option value="a">Sleeper</option>
         <option value="b">MyFantasyLeague</option>
       </select>
+      <label for="fantasy-handle">Sleeper/MFL Handle</label>
+      <input type="text" id="fantasy-handle" name="fantasy-handle" placeholder="Your fantasy handle" required>
+      <label for="phone">Cell Phone - only used to ssend league invites or draft timer warnings</label>
+      <input type="phone" id="cell-phone" name="cell-phone" placeholder="555-555-5555" required>
+      <label for="blueksy-handle">Bluesky Handle</label>
+      <input type="text" id="bluesky-handle" name="bluesky-handle" placeholder="Your blueksy handle">
+      <label for="x-handle">X/Twitter Handle</label>
+      <input type="text" id="x-handle" name="x-handle" placeholder="Your X/Twitter handle">
       <label for="referral">Did someone refer you?</label>
-      <input type="referral" id="referral" name="referral" placeholder="Justin Bauerle" required>
+      <input type="referral" id="referral" name="referral" placeholder="Justin Bauerle">
       <button type="submit" class="btn btn-primary" style="width: 100%; text-align: center; border: none; cursor: pointer;">Submit registration</button>
     </form>
     <p style="color: var(--ash); font-size: 13px; margin-top: 16px;">
