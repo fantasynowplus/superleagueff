@@ -256,7 +256,9 @@ function renderBoards() {
   const ids = Object.keys(DIVISIONS);
   if (ids.length === 0) { body.innerHTML = '<div class="empty-state">No active divisions.</div>'; return; }
 
-  const cards = ids.map(id => {
+  const cards = ids
+    .sort((a, b) => (DIVISIONS[a] || '').localeCompare(DIVISIONS[b] || ''))
+    .map(id => {
     const meta = DIV_META[id] || {};
     const name = DIVISIONS[id] || 'Division';
     const divPicks = PICKS.filter(p => p.division_id === id);
