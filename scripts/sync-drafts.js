@@ -146,6 +146,15 @@ async function sleeperDraftPicks(sleeperLeagueId) {
   return Array.isArray(picks) ? picks : [];
 }
 
+async function sleeperUsers(sleeperLeagueId) {
+  const users = await safeJson(`https://api.sleeper.app/v1/league/${sleeperLeagueId}/users`, {}, `Sleeper users ${sleeperLeagueId}`);
+  const map = new Map();
+  (Array.isArray(users) ? users : []).forEach(u => {
+    map.set(String(u.user_id), u.display_name || u.username || null);
+  });
+  return map;
+}
+
 // ---------- MFL ----------
 async function mflLogin(year) {
   try {
@@ -203,6 +212,17 @@ async function mflDraftPicks(mflId, year, cookie) {
   return out;
 }
 
+async function mflFranchises(mflId, year, cookie) {
+  const headers = { 'User-Agent': USER_AGENT };
+  if (cookie) headers.Cookie = `MFL_USER_ID=${cookie}`;
+  const body = await safeJson(`https://api.myfantasyleague.com/${year}/export?TYPE=league&L=${mflId}&JSON=1`, { redirect: 'follow', headers }, `MFL league ${mflId}`);
+  const raw = body && body.league && body.league.franchises && body.league.franchises.franchise;
+  const arr = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const map = new Map();
+  arr.forEach(f => map.set(String(f.id), f.name || null));
+  return map;
+}
+
 // ---------- main ----------
 async function main() {
   const divisions = await getActiveDivisions();
@@ -258,7 +278,9 @@ async function main() {
       let rows = [];
 
       if (d.mfl_id) {
-        const picks = await mflDraftPicks(String(d.mfl_id).trim(), year, cookie);
+        const mflId = String(d.mfl_id).trim();
+        const picks = await mflDraftPicks(mflId, year, cookie);
+        const franchiseMap = await mflFranchises(mflId, year, cookie);
         rows = picks.map(p => {
           const player = mflMap.get(p.player_id) || {};
           const overall = (p.round - 1) * 12 + p.slot;
@@ -266,7 +288,8 @@ async function main() {
             division_id: d.id, platform: 'mfl',
             round: p.round, pick_in_round: p.slot, overall,
             pick_label: pickLabel(p.round, p.slot),
-            franchise_id: p.franchise || null, team_name: null,
+            franchise_id: p.franchise || null,
+            team_name: franchiseMap.get(String(p.franchise)) || null,
             player_id: p.player_id,
             player_name: player.full_name || null,
             player_position: player.position || null,
@@ -275,17 +298,20 @@ async function main() {
           };
         });
       } else if (d.sleeper_id) {
-        const picks = await sleeperDraftPicks(String(d.sleeper_id).trim());
+        const sleeperLeagueId = String(d.sleeper_id).trim();
+        const picks = await sleeperDraftPicks(sleeperLeagueId);
+        const userMap = await sleeperUsers(sleeperLeagueId);
         rows = picks.map(p => {
           const player = sleeperMap.get(String(p.player_id)) || {};
           const meta = p.metadata || {};
           const metaName = `${meta.first_name || ''} ${meta.last_name || ''}`.trim();
+          const slotInRound = ((p.pick_no - 1) % 12) + 1;
           return {
             division_id: d.id, platform: 'sleeper',
-            round: p.round, pick_in_round: p.draft_slot, overall: p.pick_no,
-            pick_label: pickLabel(p.round, p.draft_slot),
+            round: p.round, pick_in_round: slotInRound, overall: p.pick_no,
+            pick_label: pickLabel(p.round, slotInRound),
             franchise_id: p.picked_by || null,
-            team_name: meta.team_name || metaName || null,
+            team_name: userMap.get(String(p.picked_by)) || null,
             player_id: String(p.player_id),
             player_name: player.full_name || metaName || null,
             player_position: player.position || meta.position || null,
