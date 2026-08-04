@@ -49,6 +49,7 @@
   <button class="tab active" data-tab="dashboard">Dashboard</button>
   <button class="tab" data-tab="adp">ADP</button>
   <button class="tab" data-tab="who">Who Drafted Him?</button>
+  <button class="tab" data-tab="boards">Draft Boards</button>
   <button class="tab" data-tab="recap">My Recap</button>
 </nav>
 
@@ -73,6 +74,13 @@
     </div>
     <div id="whoSuggest" class="suggest"></div>
     <div id="whoBody"><div class="empty-state">Search for a player to see every division that drafted him.</div></div>
+  </section>
+
+  <section id="tab-boards" class="tab-panel">
+    <div class="panel-head">
+      <h2>Draft Boards</h2>
+    </div>
+    <div id="boardsBody"><div class="loading">Loading…</div></div>
   </section>
 
   <section id="tab-recap" class="tab-panel">

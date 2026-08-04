@@ -5,6 +5,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let PICKS = []; let LAST_SYNC = null;   
 let ADP = [];     
 let DIVISIONS = {}; 
+let DIV_META = {};
 
 function esc(s) {
   return (s == null ? '' : String(s)).replace(/[&<>"']/g, c =>
@@ -18,12 +19,12 @@ function posBadge(pos) {
 
 async function loadData() {
   const [{ data: divs }, { data: picks }, { data: adp }] = await Promise.all([
-    db.from('divisions').select('id,division_name,is_active,leagues!inner(league_name,year,is_active)').eq('is_active', true).eq('leagues.is_active', true),
+    db.from('divisions').select('id,division_name,is_active,draftboard_url,sleeper_id,mfl_id,leagues!inner(league_name,year,is_active)').eq('is_active', true).eq('leagues.is_active', true),
     db.from('draft_picks').select('*'),
     db.from('draft_adp').select('*')
   ]);
 
-  (divs || []).forEach(d => { DIVISIONS[d.id] = d.division_name; });
+  (divs || []).forEach(d => { DIVISIONS[d.id] = d.division_name; DIV_META[d.id] = d; });
   const activeIds = new Set(Object.keys(DIVISIONS));
   PICKS = (picks || []).filter(p => activeIds.has(p.division_id));
   ADP = adp || [];
@@ -75,7 +76,7 @@ function renderDashboard() {
   }).join('');
 
   const runs = {};
-  positions.forEach(pos => { runs[pos] = 0; });
+  positions.forEach(pos => { runs[pos] = { len: 0, divId: null }; });
   Object.keys(DIVISIONS).forEach(divId => {
     const seq = PICKS.filter(p => p.division_id === divId).sort((a, b) => a.overall - b.overall);
     let curPos = null, curLen = 0;
@@ -83,7 +84,7 @@ function renderDashboard() {
       const pos = (p.player_position || '').toUpperCase();
       if (pos === curPos) curLen++;
       else { curPos = pos; curLen = 1; }
-      if (positions.includes(pos) && curLen > (runs[pos] || 0)) runs[pos] = curLen;
+      if (positions.includes(pos) && curLen > runs[pos].len) runs[pos] = { len: curLen, divId };
     });
   });
 
@@ -102,9 +103,9 @@ function renderDashboard() {
 
   const statCards = `
     <div class="stat-card"><div class="label">Total Picks</div><div class="value">${totalPicks}</div><div class="detail">${divisionsDrafting} of ${Object.keys(DIVISIONS).length} divisions drafting</div></div>
-    <div class="stat-card"><div class="label">Longest QB Run</div><div class="value">${runs.QB || 0}</div><div class="detail">consecutive picks</div></div>
-    <div class="stat-card"><div class="label">Longest RB Run</div><div class="value">${runs.RB || 0}</div><div class="detail">consecutive picks</div></div>
-    <div class="stat-card"><div class="label">Longest WR Run</div><div class="value">${runs.WR || 0}</div><div class="detail">consecutive picks</div></div>
+    <div class="stat-card"><div class="label">Longest QB Run</div><div class="value">${runs.QB.len} picks</div><div class="detail">${runs.QB.len ? esc(DIVISIONS[runs.QB.divId] || '') : '—'}</div></div>
+    <div class="stat-card"><div class="label">Longest RB Run</div><div class="value">${runs.RB.len} picks</div><div class="detail">${runs.RB.len ? esc(DIVISIONS[runs.RB.divId] || '') : '—'}</div></div>
+    <div class="stat-card"><div class="label">Longest WR Run</div><div class="value">${runs.WR.len} picks</div><div class="detail">${runs.WR.len ? esc(DIVISIONS[runs.WR.divId] || '') : '—'}</div></div>
     <div class="stat-card"><div class="label">Most-Drafted Team</div><div class="value">${mostTeam ? esc(mostTeam[0]) : '—'}</div><div class="detail">${mostTeam ? mostTeam[1] + ' picks' : ''}</div></div>
     <div class="stat-card"><div class="label">Least-Drafted Team</div><div class="value">${leastTeam ? esc(leastTeam[0]) : '—'}</div><div class="detail">${leastTeam ? leastTeam[1] + ' picks' : ''}</div></div>
   `;
@@ -250,6 +251,38 @@ function renderSyncLine() {
   el.innerHTML = `<span>${last}</span><span class="sync-next">${next}</span>`;
 }
 
+function renderBoards() {
+  const body = document.getElementById('boardsBody');
+  const ids = Object.keys(DIVISIONS);
+  if (ids.length === 0) { body.innerHTML = '<div class="empty-state">No active divisions.</div>'; return; }
+
+  const cards = ids.map(id => {
+    const meta = DIV_META[id] || {};
+    const name = DIVISIONS[id] || 'Division';
+    const divPicks = PICKS.filter(p => p.division_id === id);
+    let status, detail;
+    if (divPicks.length === 0) {
+      status = 'Not started';
+      detail = '0 picks';
+    } else {
+      const maxRound = divPicks.reduce((m, p) => Math.max(m, p.round || 0), 0);
+      status = `Round ${maxRound}`;
+      detail = `${divPicks.length} picks in`;
+    }
+    const link = meta.draftboard_url
+      ? `<a href="${esc(meta.draftboard_url)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;color:var(--orange-bright);font-weight:600;text-decoration:none">Open draft board →</a>`
+      : `<span class="mono" style="color:var(--dim)">No board link</span>`;
+    return `<div class="stat-card">
+      <div class="label">${esc(name)}</div>
+      <div class="value">${esc(status)}</div>
+      <div class="detail">${esc(detail)}</div>
+      ${link}
+    </div>`;
+  }).join('');
+
+  body.innerHTML = `<div class="stat-grid">${cards}</div>`;
+}
+
 function setupTabs() {
   document.querySelectorAll('.tab').forEach(tab =>
     tab.addEventListener('click', () => {
@@ -270,6 +303,7 @@ async function init() {
     await loadData();
     renderDashboard();
     renderAdp();
+    renderBoards();
   } catch (err) {
     document.getElementById('dashboardBody').innerHTML =
       `<div class="empty-state">Could not load draft data. ${esc(err.message)}</div>`;
