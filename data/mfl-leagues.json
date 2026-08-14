@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-14T13:36:25.232Z",
+  "generated_at": "2026-08-14T15:04:41.040Z",
   "leagues": {
     "57322": {
       "division": "Doctor Strange",
@@ -12,7 +12,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:36:05.688Z",
+      "last_success": "2026-08-14T15:04:19.938Z",
       "last_error": null
     },
     "1392512521302196224": {
@@ -26,7 +26,7 @@
       "draft_round": 4,
       "draft_complete": false,
       "stage": 3,
-      "last_success": "2026-08-14T13:34:52.049Z",
+      "last_success": "2026-08-14T15:03:07.195Z",
       "last_error": null
     },
     "1380664401819869184": {
@@ -40,7 +40,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:34:56.118Z",
+      "last_success": "2026-08-14T15:03:10.487Z",
       "last_error": null
     },
     "1223726947859701760": {
@@ -54,7 +54,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:34:59.524Z",
+      "last_success": "2026-08-14T15:03:13.521Z",
       "last_error": null
     },
     "1223726858080620544": {
@@ -68,7 +68,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:02.479Z",
+      "last_success": "2026-08-14T15:03:16.507Z",
       "last_error": null
     },
     "1223727062196420608": {
@@ -82,7 +82,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:05.701Z",
+      "last_success": "2026-08-14T15:03:19.481Z",
       "last_error": null
     },
     "1223726996723339264": {
@@ -96,7 +96,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:08.405Z",
+      "last_success": "2026-08-14T15:03:25.632Z",
       "last_error": null
     },
     "1238141561359835136": {
@@ -110,7 +110,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:11.871Z",
+      "last_success": "2026-08-14T15:03:28.629Z",
       "last_error": null
     },
     "1223726783707230209": {
@@ -124,7 +124,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:15.055Z",
+      "last_success": "2026-08-14T15:03:31.781Z",
       "last_error": null
     },
     "1243328883655196672": {
@@ -138,7 +138,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:17.788Z",
+      "last_success": "2026-08-14T15:03:34.768Z",
       "last_error": null
     },
     "1243378828642881536": {
@@ -152,7 +152,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:20.743Z",
+      "last_success": "2026-08-14T15:03:37.794Z",
       "last_error": null
     },
     "1243624288804671488": {
@@ -166,7 +166,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:23.654Z",
+      "last_success": "2026-08-14T15:03:40.968Z",
       "last_error": null
     },
     "1248672053377126400": {
@@ -180,7 +180,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:26.956Z",
+      "last_success": "2026-08-14T15:03:43.983Z",
       "last_error": null
     },
     "1108850789075738624": {
@@ -194,7 +194,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:29.809Z",
+      "last_success": "2026-08-14T15:03:46.941Z",
       "last_error": null
     },
     "1108852548250865664": {
@@ -208,7 +208,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:32.598Z",
+      "last_success": "2026-08-14T15:03:49.929Z",
       "last_error": null
     },
     "1109605107756347392": {
@@ -222,7 +222,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:35.386Z",
+      "last_success": "2026-08-14T15:03:52.820Z",
       "last_error": null
     },
     "1111330385205616640": {
@@ -236,7 +236,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:38.339Z",
+      "last_success": "2026-08-14T15:03:55.739Z",
       "last_error": null
     },
     "1111724018601672704": {
@@ -250,7 +250,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:41.178Z",
+      "last_success": "2026-08-14T15:03:58.708Z",
       "last_error": null
     },
     "1114660659519737856": {
@@ -264,7 +264,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:43.987Z",
+      "last_success": "2026-08-14T15:04:01.715Z",
       "last_error": null
     },
     "1116439889706352640": {
@@ -278,7 +278,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:46.788Z",
+      "last_success": "2026-08-14T15:04:04.805Z",
       "last_error": null
     },
     "1380664203186028544": {
@@ -292,7 +292,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:49.574Z",
+      "last_success": "2026-08-14T15:04:07.851Z",
       "last_error": null
     },
     "1380664437198831616": {
@@ -306,7 +306,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:52.320Z",
+      "last_success": "2026-08-14T15:04:10.863Z",
       "last_error": null
     },
     "1380663420742799360": {
@@ -320,7 +320,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:55.322Z",
+      "last_success": "2026-08-14T15:04:13.863Z",
       "last_error": null
     },
     "1380664367653068800": {
@@ -334,7 +334,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:35:58.790Z",
+      "last_success": "2026-08-14T15:04:16.838Z",
       "last_error": null
     },
     "1385124104255868928": {
@@ -348,7 +348,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:36:08.477Z",
+      "last_success": "2026-08-14T15:04:23.011Z",
       "last_error": null
     },
     "1380664167270207488": {
@@ -362,7 +362,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:36:11.313Z",
+      "last_success": "2026-08-14T15:04:26.089Z",
       "last_error": null
     },
     "1215048014754758656": {
@@ -376,7 +376,7 @@
       "draft_round": 20,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:36:14.089Z",
+      "last_success": "2026-08-14T15:04:29.010Z",
       "last_error": null
     },
     "1380664238221053952": {
@@ -390,7 +390,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:36:16.848Z",
+      "last_success": "2026-08-14T15:04:31.967Z",
       "last_error": null
     },
     "1380664085921685504": {
@@ -404,7 +404,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:36:19.690Z",
+      "last_success": "2026-08-14T15:04:35.151Z",
       "last_error": null
     },
     "1380664130427437056": {
@@ -418,7 +418,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:36:22.480Z",
+      "last_success": "2026-08-14T15:04:38.060Z",
       "last_error": null
     },
     "1380664329744945152": {
@@ -432,7 +432,7 @@
       "draft_round": 14,
       "draft_complete": true,
       "stage": 4,
-      "last_success": "2026-08-14T13:36:25.232Z",
+      "last_success": "2026-08-14T15:04:41.039Z",
       "last_error": null
     }
   }
