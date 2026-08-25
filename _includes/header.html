@@ -5,11 +5,11 @@
     </a>
     <button class="nav-toggle" aria-label="Toggle navigation">Menu</button>
     <nav class="main-nav">
-      <a href="index.html"{% if page.nav == 'home' %} class="active"{% endif %}>Home</a>
-      <a href="rules-register.html"{% if page.nav == 'rules' %} class="active"{% endif %}>Rules</a>
-      {% if site.show_divisions %}<a href="divisions.html"{% if page.nav == 'divisions' %} class="active"{% endif %}>Divisions</a>{% endif %}
-      {% if site.show_draft %}<a href="draft-tool.html"{% if page.nav == 'draft' %} class="active"{% endif %}>Draft Tool</a>{% endif %}
-      <a href="standings.html"{% if page.nav == 'standings' %} class="active"{% endif %}>Standings</a>
+      <a href="index.html"{% if page.name == 'index.html' %} class="active"{% endif %}>Home</a>
+      <a href="rules-register.html"{% if page.name == 'rules-register.html' %} class="active"{% endif %}>Rules</a>
+      {% if site.show_divisions %}<a href="divisions.html"{% if page.name == 'divisions.html' %} class="active"{% endif %}>Divisions</a>{% endif %}
+      {% if site.show_draft %}<a href="draft-tool.html"{% if page.name == 'draft-tool.html' %} class="active"{% endif %}>Draft Tool</a>{% endif %}
+      <a href="standings.html"{% if page.name == 'standings.html' %} class="active"{% endif %}>Standings</a>
       <a href="https://www.extra-life.org/teams/slff" target="_blank" rel="noopener">Donate</a>
       <a href="login.html" class="donate-link">Login</a>
     </nav>
