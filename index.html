@@ -1,33 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Super League — Charity Fantasy Football</title>
-<meta name="description" content="Super League combines your fantasy football passion with real impact. Every game you win supports vital programs for children and families. Play hard. Make a difference.">
-<link rel="stylesheet" href="css/style.css">
-<link rel="icon" href="favicon.ico" type="image/x-icon">
-<script src="js/analytics.js"></script>
-</head>
-<body>
-
-<header class="site-header">
-  <div class="wrap">
-    <a href="index.html" class="brand">
-      <img src="assets/images/Super-League-Banner.png" alt="Super League" class="site-logo">
-    </a>
-    <button class="nav-toggle" aria-label="Toggle navigation">Menu</button>
-    <nav class="main-nav">
-      <a href="index.html" class="active">Home</a>
-      <a href="rules-register.html">Rules</a>
-      <a href="divisions.html" class="hidden-nav">Divisions</a>
-      <a href="draft-tool.html" class="hidden-nab">Draft Tool</a>
-      <a href="standings.html">Standings</a>
-      <a href="https://www.extra-life.org/teams/slff" target="_blank">Donate</a>
-      <a href="login.html" class="donate-link" target="_blank" rel="noopener">Login</a>
-    </nav>
-  </div>
-</header>
+---
+title: Super League — Charity Fantasy Football
+description: Super League combines your fantasy football passion with real impact. Every game you win supports vital programs for children and families. Play hard. Make a difference.
+nav: home
+---
+{% include head.html %}
+{% include header.html %}
 
 <section class="hero">
   <div class="wrap">
@@ -122,36 +99,12 @@
   </div>
 </section>
 
-<footer class="site-footer">
-  <div class="wrap">
-    <p>&copy; 2026 Super League. A charity fantasy football league.</p>
-    <nav>
-      <a href="rules-register.html">Rules</a>
-      <a href="draft-tool.html" class="hidden-nab">Draft Tool</a>
-      <a href="standings.html">Standings</a>
-    </nav>
-  </div>
-</footer>
-
-<script src="js/main.js"></script>
-  
 <script>
-  console.log('Current URL:', window.location.href);
-  console.log('Hash:', window.location.hash);
-  
   if (window.location.hash) {
     const params = new URLSearchParams(window.location.hash.slice(1));
-    console.log('Hash params:', {
-      type: params.get('type'),
-      access_token: params.get('access_token') ? 'exists' : 'missing',
-      error: params.get('error')
-    });
-    
     if (params.get('type') === 'recovery' || params.get('access_token')) {
-      console.log('Redirecting to reset-password.html');
       window.location.href = './reset-password.html' + window.location.hash;
     }
   }
 </script>
-</body>
-</html>
+{% include footer.html %}
