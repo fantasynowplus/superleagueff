@@ -1,1 +1,17 @@
-
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <img src="assets/images/Super-League-Banner.png" alt="Super League" class="site-logo">
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <nav class="main-nav">
+      <a href="index.html" class="{% if page.nav == 'home' %}active{% endif %}">Home</a>
+      <a href="rules-register.html" class="{% if page.nav == 'rules' %}active{% endif %}">Rules</a>
+      <a href="divisions.html" class="hidden-nav {% if page.nav == 'divisions' %}active{% endif %}">Divisions</a>
+      <a href="draft-tool.html" class="hidden-nav {% if page.nav == 'draft' %}active{% endif %}">Draft Tool</a>
+      <a href="standings.html" class="{% if page.nav == 'standings' %}active{% endif %}">Standings</a>
+      <a href="https://www.extra-life.org/teams/slff" target="_blank">Donate</a>
+      <a href="login.html" class="donate-link" target="_blank" rel="noopener">Login</a>
+    </nav>
+  </div>
+</header>
