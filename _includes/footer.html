@@ -3,12 +3,10 @@
     <p>&copy; 2026 Super League. A charity fantasy football league.</p>
     <nav>
       <a href="rules-register.html">Rules</a>
-      <a href="draft-tool.html" class="hidden-nav">Draft Tool</a>
+      {% if site.show_draft %}<a href="draft-tool.html">Draft Tool</a>{% endif %}
       <a href="standings.html">Standings</a>
     </nav>
   </div>
 </footer>
 
 <script src="js/main.js"></script>
-</body>
-</html>
