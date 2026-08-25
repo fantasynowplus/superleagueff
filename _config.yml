@@ -1,0 +1,11 @@
+title: Super League
+url: https://superleagueff.org
+
+show_divisions: false
+show_draft: false
+
+exclude:
+  - README.md
+  - scripts
+  - .github
+  - .DS_Store
