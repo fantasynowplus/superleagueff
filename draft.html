@@ -1,30 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Draft Central — Super League</title>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/draft.css">
-</head>
-<body>
-  <header class="draft-header">
-    <div class="header-inner">
-      <div class="brand">
-        <span class="brand-mark">SL</span>
-        <div>
-          <h1>Draft Central</h1>
-          <p id="leagueLabel">Loading…</p>
-        </div>
-      </div>
-      <div class="last-sync" id="lastSync"></div>
-    </div>
-    <nav class="tabs">
-      <button class="tab active" data-tab="dashboard">Dashboard</button>
-      <button class="tab" data-tab="adp">ADP</button>
-      <button class="tab" data-tab="who">Who Drafted Him?</button>
-    </nav>
-  </header>
+---
+title: Super League — Charity Fantasy Football
+description: Super League combines your fantasy football passion with real impact. Every game you win supports vital programs for children and families. Play hard. Make a difference.
+nav: home
+---
+{% include head.html %}
+{% include header.html %}
 
   <main class="draft-main">
     <section id="tab-dashboard" class="tab-panel active">
@@ -53,3 +33,4 @@
 <script src="js/draft.js"></script>
 </body>
 </html>
+
