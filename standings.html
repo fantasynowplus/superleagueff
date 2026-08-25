@@ -1,33 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Standings — Super League </title>
-<meta name="description" content="Current standings for Super League, a charity fantasy football league.">
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/standings.css">
-<script src="js/analytics.js"></script>    
-</head>
-<body>
-
-<header class="site-header">
-  <div class="wrap">
-    <a href="index.html" class="brand">
-      <img src="assets/images/Super-League-Banner.png" alt="Super League" class="site-logo">
-    </a>
-    <button class="nav-toggle" aria-label="Toggle navigation">Menu</button>
-    <nav class="main-nav">
-      <a href="index.html">Home</a>
-      <a href="rules-register.html">Rules</a>
-      <a href="divisions.html" class="hidden-nav">Divisions</a>
-      <a href="draft-tool.html" class="hidden-nab">Draft Tool</a>
-      <a href="standings.html" class="active">Standings</a>
-      <a href="https://www.extra-life.org/teams/slff" target="_blank">Donate</a>
-      <a href="login.html" class="donate-link" target="_blank" rel="noopener">Login</a>
-    </nav>
-  </div>
-</header>
+---
+title: Super League — Charity Fantasy Football
+description: Super League combines your fantasy football passion with real impact. Every game you win supports vital programs for children and families. Play hard. Make a difference.
+nav: home
+---
+{% include head.html %}
+{% include header.html %}
 
 <section class="hero" style="padding-bottom: 40px;">
   <div class="wrap">
@@ -77,18 +54,7 @@
   </div>
 </section>
 
-<footer class="site-footer">
-  <div class="wrap">
-    <p>&copy; 2026 Super League. A charity fantasy football league.</p>
-    <nav>
-      <a href="rules-register.html">Rules</a>
-      <a href="draft-tool.html" class="hidden-nab">Draft Tool</a>
-      <a href="standings.html">Standings</a>
-    </nav>
-  </div>
-</footer>
-
-  <script src="js/main.js"></script>
+{% include footer.html %}
   <script src="js/standings.js"></script>
 </body>
 </html>
