@@ -1,0 +1,68 @@
+---
+title: "Super League — Charity Fantasy Football"
+description: "Super League combines your fantasy football passion with real impact. Every game you win supports vital programs for children and families. Play hard. Make a difference."
+nav: home
+---
+{% include head.html %}
+<link rel="stylesheet" href="css/waivers.css">
+{% include header.html %}
+
+<section class="draft-central-hero">
+  <div class="wrap">
+    <div class="dc-brand">
+      <img src="./assets/images/League-Logo.png" alt="Super League" class="dc-logo">
+      <div>
+        <h1>Waiver Wire</h1>
+        <p id="leagueLabel">Loading…</p>
+      </div>
+    </div>
+    <div class="last-sync" id="lastSync"></div>
+  </div>
+</section>
+
+<nav class="tabs wrap">
+  <button class="tab active" data-tab="log">Waiver Log</button>
+  <button class="tab" data-tab="ownership">Ownership</button>
+  <button class="tab" data-tab="faab">FAAB Spending</button>
+</nav>
+
+<main class="draft-main wrap">
+
+  <section id="tab-log" class="tab-panel active">
+    <div class="panel-head">
+      <h2>Waiver Log</h2>
+      <input type="text" id="logSearch" class="search" placeholder="Search player or team…" autocomplete="off">
+    </div>
+    <div class="filter-row">
+      <select id="logDivisionFilter"><option value="">All Divisions</option></select>
+    </div>
+    <div id="logBody"><div class="loading">Loading waiver data…</div></div>
+  </section>
+
+  <section id="tab-ownership" class="tab-panel">
+    <div class="panel-head">
+      <h2>Roster Ownership</h2>
+      <input type="text" id="ownSearch" class="search" placeholder="Search player…" autocomplete="off">
+    </div>
+    <div id="ownBody"><div class="loading">Loading…</div></div>
+  </section>
+
+  <section id="tab-faab" class="tab-panel">
+    <div class="panel-head">
+      <h2>FAAB Spending</h2>
+    </div>
+    <div class="filter-row">
+      <select id="faabDivisionFilter"><option value="">All Divisions</option></select>
+    </div>
+    <div id="faabBody"><div class="loading">Loading…</div></div>
+  </section>
+
+</main>
+
+{% include footer.html %}
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/waivers.js"></script>
+
+</body>
+</html>
