@@ -69,13 +69,32 @@ async function sb(path, opts = {}) {
   try { return JSON.parse(t); } catch { return null; }
 }
 
+// PostgREST caps a single select() at 1000 rows by default. nfl_players (Sleeper ~11k,
+// MFL several thousand) blows well past that, so a plain sb() call for it silently returns
+// an arbitrary 1000-row slice — which is why player lookups kept failing for real IDs that
+// simply weren't in that slice. Page through with the Range header until a page comes back
+// short of pageSize.
+async function sbAll(path, pageSize = 1000) {
+  let out = [];
+  let offset = 0;
+  while (true) {
+    const sep = path.includes('?') ? '&' : '?';
+    const rows = await sb(`${path}${sep}limit=${pageSize}&offset=${offset}`);
+    const page = rows || [];
+    out = out.concat(page);
+    if (page.length < pageSize) break;
+    offset += pageSize;
+  }
+  return out;
+}
+
 async function getActiveDivisions() {
   return sb('divisions?is_active=eq.true&or=(mfl_id.not.is.null,sleeper_id.not.is.null)&select=id,division_name,mfl_id,sleeper_id,leagues!inner(year,is_active)&leagues.is_active=eq.true');
 }
 
 async function loadPlayerCache(platform) {
   const map = new Map();
-  const rows = await sb(`nfl_players?platform=eq.${platform}&select=player_id,full_name,position,nfl_team`);
+  const rows = await sbAll(`nfl_players?platform=eq.${platform}&select=player_id,full_name,position,nfl_team`);
   rows.forEach(r => map.set(r.player_id, r));
   return map;
 }
