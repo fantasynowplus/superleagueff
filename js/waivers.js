@@ -38,14 +38,31 @@ function renderSyncLine() {
   el.textContent = LAST_SYNC ? `Last synced ${LAST_SYNC.toLocaleString()}` : 'Not synced yet';
 }
 
+// PostgREST caps a single select() at ~1000 rows by default. waiver_transactions and
+// current_rosters can both easily exceed that over a season, so page through them fully
+// instead of silently truncating (which is what was causing the ownership modal mismatch).
+async function fetchAll(table, select) {
+  const pageSize = 1000;
+  let from = 0;
+  let out = [];
+  while (true) {
+    const { data, error } = await db.from(table).select(select).range(from, from + pageSize - 1);
+    if (error) throw error;
+    out = out.concat(data || []);
+    if (!data || data.length < pageSize) break;
+    from += pageSize;
+  }
+  return out;
+}
+
 // ---------- Load ----------
 async function loadData() {
-  const [{ data: divs }, { data: txns }, { data: ownership }, { data: faab }, { data: rosters }] = await Promise.all([
+  const [{ data: divs }, { data: ownership }, { data: faab }, txns, rosters] = await Promise.all([
     db.from('divisions').select('id,division_name,is_active,leagues!inner(league_name,year,is_active)').eq('is_active', true).eq('leagues.is_active', true),
-    db.from('waiver_transactions').select('*'),
     db.from('player_ownership').select('*'),
     db.from('team_faab_spend').select('division_id,total_faab_spent,paid_claims_count,total_claims_count'),
-    db.from('current_rosters').select('division_id,platform,franchise_id,player_id,match_key')
+    fetchAll('waiver_transactions', '*'),
+    fetchAll('current_rosters', 'division_id,platform,franchise_id,player_id,match_key')
   ]);
 
   (divs || []).forEach(d => { DIVISIONS[d.id] = d.division_name; });
