@@ -134,10 +134,6 @@ table.data tbody tr:hover { background: rgba(226,111,15,0.06); }
 .pm-league-row .div-name { color: var(--tan); font-weight: 600; }
 .pm-league-row .status.owned { color: #4fbf82; font-family: "IBM Plex Mono", monospace; font-size: 13px; }
 .pm-league-row .status.available { color: var(--dim); font-family: "IBM Plex Mono", monospace; font-size: 13px; }
-.pm-stats-note {
-  color: var(--dim); font-size: 12px; font-style: italic;
-  border-top: 1px solid var(--rule); padding-top: 14px;
-}
 
 /* ---------- Ownership bars ---------- */
 .own-row {
