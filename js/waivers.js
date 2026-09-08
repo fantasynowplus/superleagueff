@@ -44,7 +44,7 @@ async function loadData() {
     db.from('divisions').select('id,division_name,is_active,leagues!inner(league_name,year,is_active)').eq('is_active', true).eq('leagues.is_active', true),
     db.from('waiver_transactions').select('*'),
     db.from('player_ownership').select('*'),
-    db.from('team_faab_spend').select('*'),
+    db.from('team_faab_spend').select('division_id,total_faab_spent,paid_claims_count,total_claims_count'),
     db.from('current_rosters').select('division_id,platform,franchise_id,player_id,match_key')
   ]);
 
@@ -55,8 +55,15 @@ async function loadData() {
   TXNS = (txns || []).filter(t => activeIds.has(t.division_id))
     .sort((a, b) => new Date(b.transaction_date || 0) - new Date(a.transaction_date || 0));
   OWNERSHIP = (ownership || []).sort((a, b) => (b.ownership_pct || 0) - (a.ownership_pct || 0));
-  FAAB = (faab || []).filter(f => activeIds.has(f.division_id))
-    .sort((a, b) => (b.total_faab_spent || 0) - (a.total_faab_spent || 0));
+  const teamFaab = (faab || []).filter(f => activeIds.has(f.division_id));
+  const byDivision = {};
+  teamFaab.forEach(f => {
+    if (!byDivision[f.division_id]) byDivision[f.division_id] = { division_id: f.division_id, total_faab_spent: 0, paid_claims_count: 0, total_claims_count: 0 };
+    byDivision[f.division_id].total_faab_spent += Number(f.total_faab_spent) || 0;
+    byDivision[f.division_id].paid_claims_count += Number(f.paid_claims_count) || 0;
+    byDivision[f.division_id].total_claims_count += Number(f.total_claims_count) || 0;
+  });
+  FAAB = Object.values(byDivision).sort((a, b) => b.total_faab_spent - a.total_faab_spent);
   ROSTERS = (rosters || []).filter(r => activeIds.has(r.division_id));
 
   if (divs && divs.length && divs[0].leagues) {
@@ -68,7 +75,6 @@ async function loadData() {
   renderSyncLine();
 
   populateDivisionFilter('logDivisionFilter');
-  populateDivisionFilter('faabDivisionFilter');
 }
 
 function populateDivisionFilter(selectId) {
@@ -200,27 +206,23 @@ function closePlayerModal() {
 }
 
 // ---------- FAAB Spending ----------
-function renderFaab(divisionId = '') {
+function renderFaab() {
   const body = document.getElementById('faabBody');
 
-  let rows = FAAB;
-  if (divisionId) rows = rows.filter(f => f.division_id === divisionId);
-
-  if (rows.length === 0) {
+  if (FAAB.length === 0) {
     body.innerHTML = '<div class="empty-state">No FAAB spending recorded yet.</div>';
     return;
   }
 
-  const trs = rows.map(f => `<tr>
-    <td>${esc(DIVISIONS[f.division_id] || '')}</td>
-    <td class="player-cell">${esc(f.team_name || 'Unknown')}</td>
+  const trs = FAAB.map(f => `<tr>
+    <td class="player-cell">${esc(DIVISIONS[f.division_id] || '')}</td>
     <td class="faab-cell">${fmtMoney(f.total_faab_spent)}</td>
     <td class="mono" style="text-align:right;">${f.paid_claims_count || 0}</td>
     <td class="mono" style="text-align:right;">${f.total_claims_count || 0}</td>
   </tr>`).join('');
 
   body.innerHTML = `<div class="table-wrap"><table class="data">
-    <thead><tr><th>Division</th><th>Team</th><th>Total FAAB Spent</th><th>Paid Claims</th><th>Total Claims</th></tr></thead>
+    <thead><tr><th>Division</th><th>Total FAAB Spent</th><th>Paid Claims</th><th>Total Claims</th></tr></thead>
     <tbody>${trs}</tbody>
   </table></div>`;
 }
@@ -244,7 +246,6 @@ async function init() {
   document.getElementById('logDivisionFilter').addEventListener('change', e =>
     renderLog(document.getElementById('logSearch').value, e.target.value));
   document.getElementById('ownSearch').addEventListener('input', e => renderOwnership(e.target.value));
-  document.getElementById('faabDivisionFilter').addEventListener('change', e => renderFaab(e.target.value));
 
   document.getElementById('pmClose').addEventListener('click', closePlayerModal);
   document.getElementById('playerModal').addEventListener('click', e => {
