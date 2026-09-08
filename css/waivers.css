@@ -73,9 +73,11 @@ table.data thead th {
 table.data tbody td { padding: 11px 14px; border-bottom: 1px solid var(--navy-2); font-size: 14px; }
 table.data tbody tr:last-child td { border-bottom: none; }
 table.data tbody tr:hover { background: rgba(226,111,15,0.06); }
+table.data thead th.num-th { text-align: right; }
 .mono { font-family: "IBM Plex Mono", monospace; }
 .player-cell { font-weight: 600; }
 .faab-cell { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--orange-bright); text-align: right; }
+.num-td { text-align: right; }
 .date-cell { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--dim); white-space: nowrap; }
 
 .pos-badge {

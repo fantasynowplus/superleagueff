@@ -137,7 +137,7 @@ function renderLog(search = '', divisionId = '') {
   }).join('');
 
   body.innerHTML = `<div class="table-wrap"><table class="data">
-    <thead><tr><th>Date</th><th>Division</th><th>Added</th><th>Dropped</th><th>FAAB</th></tr></thead>
+    <thead><tr><th>Date</th><th>Division</th><th>Added</th><th>Dropped</th><th class="num-th">FAAB</th></tr></thead>
     <tbody>${trs}</tbody>
   </table></div>`;
 
@@ -234,12 +234,12 @@ function renderFaab() {
   const trs = FAAB.map(f => `<tr>
     <td class="player-cell">${esc(DIVISIONS[f.division_id] || '')}</td>
     <td class="faab-cell">${fmtMoney(f.total_faab_spent)}</td>
-    <td class="mono" style="text-align:right;">${f.paid_claims_count || 0}</td>
-    <td class="mono" style="text-align:right;">${f.total_claims_count || 0}</td>
+    <td class="mono num-td">${f.paid_claims_count || 0}</td>
+    <td class="mono num-td">${f.total_claims_count || 0}</td>
   </tr>`).join('');
 
   body.innerHTML = `<div class="table-wrap"><table class="data">
-    <thead><tr><th>Division</th><th>Total FAAB Spent</th><th>Paid Claims</th><th>Total Claims</th></tr></thead>
+    <thead><tr><th>Division</th><th class="num-th">Total FAAB Spent</th><th class="num-th">Paid Claims</th><th class="num-th">Total Claims</th></tr></thead>
     <tbody>${trs}</tbody>
   </table></div>`;
 }
