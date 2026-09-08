@@ -45,7 +45,7 @@ async function loadData() {
     db.from('waiver_transactions').select('*'),
     db.from('player_ownership').select('*'),
     db.from('team_faab_spend').select('*'),
-    db.from('current_rosters').select('division_id,platform,franchise_id,team_name,player_id,match_key')
+    db.from('current_rosters').select('division_id,platform,franchise_id,player_id,match_key')
   ]);
 
   (divs || []).forEach(d => { DIVISIONS[d.id] = d.division_name; });
@@ -160,10 +160,10 @@ function openPlayerModal(matchKey, name, pos) {
 
   const ownRow = OWNERSHIP.find(o => o.match_key === matchKey);
   const rosterRows = ROSTERS.filter(r => r.match_key === matchKey);
-  const rosteredIn = new Map(rosterRows.map(r => [r.division_id, r.team_name]));
+  const rosteredDivisionIds = new Set(rosterRows.map(r => r.division_id));
 
   const pct = ownRow ? Number(ownRow.ownership_pct) || 0 : 0;
-  const divCount = ownRow ? ownRow.divisions_rostered : rosteredIn.size;
+  const divCount = ownRow ? ownRow.divisions_rostered : rosteredDivisionIds.size;
   const totalDivs = ownRow ? ownRow.total_active_divisions : DIV_ORDER.length;
   const nflTeam = ownRow ? ownRow.player_nfl_team : '';
 
@@ -182,11 +182,11 @@ function openPlayerModal(matchKey, name, pos) {
   }
 
   const leagueRows = DIV_ORDER.map(id => {
-    const owner = rosteredIn.get(id);
+    const rostered = rosteredDivisionIds.has(id);
     return `<div class="pm-league-row">
       <span class="div-name">${esc(DIVISIONS[id])}</span>
-      ${owner
-        ? `<span class="status owned">Rostered — ${esc(owner)}</span>`
+      ${rostered
+        ? `<span class="status owned">Rostered</span>`
         : `<span class="status available">Available</span>`}
     </div>`;
   }).join('');
