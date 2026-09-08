@@ -61,6 +61,25 @@ nav: home
 
 {% include footer.html %}
 
+<div id="playerModal" class="pm-overlay" style="display:none;">
+  <div class="pm-card">
+    <button class="pm-close" id="pmClose" aria-label="Close">&times;</button>
+    <div class="pm-header">
+      <img id="pmHeadshot" class="pm-headshot" src="" alt="">
+      <div>
+        <div class="pm-name" id="pmName">—</div>
+        <div class="pm-sub" id="pmSub">—</div>
+      </div>
+    </div>
+    <div class="pm-pct-row">
+      <div class="own-bar-wrap"><div class="own-bar" id="pmBar" style="width:0%"></div></div>
+      <div class="own-pct" id="pmPct">0%</div>
+    </div>
+    <div class="pm-leagues" id="pmLeagues"></div>
+    <div class="pm-stats-note">Season stats/game log aren't wired up yet for this site — that needs its own stats sync, separate from the ownership data here.</div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/waivers.js"></script>
 

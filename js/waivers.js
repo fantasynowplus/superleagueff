@@ -5,7 +5,9 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let TXNS = [];
 let OWNERSHIP = [];
 let FAAB = [];
+let ROSTERS = [];
 let DIVISIONS = {};
+let DIV_ORDER = [];
 let LAST_SYNC = null;
 
 function esc(s) {
@@ -38,14 +40,16 @@ function renderSyncLine() {
 
 // ---------- Load ----------
 async function loadData() {
-  const [{ data: divs }, { data: txns }, { data: ownership }, { data: faab }] = await Promise.all([
+  const [{ data: divs }, { data: txns }, { data: ownership }, { data: faab }, { data: rosters }] = await Promise.all([
     db.from('divisions').select('id,division_name,is_active,leagues!inner(league_name,year,is_active)').eq('is_active', true).eq('leagues.is_active', true),
     db.from('waiver_transactions').select('*'),
     db.from('player_ownership').select('*'),
-    db.from('team_faab_spend').select('*')
+    db.from('team_faab_spend').select('*'),
+    db.from('current_rosters').select('division_id,platform,franchise_id,team_name,player_id,match_key')
   ]);
 
   (divs || []).forEach(d => { DIVISIONS[d.id] = d.division_name; });
+  DIV_ORDER = Object.keys(DIVISIONS).sort((a, b) => (DIVISIONS[a] || '').localeCompare(DIVISIONS[b] || ''));
   const activeIds = new Set(Object.keys(DIVISIONS));
 
   TXNS = (txns || []).filter(t => activeIds.has(t.division_id))
@@ -53,6 +57,7 @@ async function loadData() {
   OWNERSHIP = (ownership || []).sort((a, b) => (b.ownership_pct || 0) - (a.ownership_pct || 0));
   FAAB = (faab || []).filter(f => activeIds.has(f.division_id))
     .sort((a, b) => (b.total_faab_spent || 0) - (a.total_faab_spent || 0));
+  ROSTERS = (rosters || []).filter(r => activeIds.has(r.division_id));
 
   if (divs && divs.length && divs[0].leagues) {
     document.getElementById('leagueLabel').textContent =
@@ -94,15 +99,14 @@ function renderLog(search = '', divisionId = '') {
 
   const trs = rows.slice(0, 500).map(t => {
     const added = t.player_added_name
-      ? `<span class="add-tag">+ ${esc(t.player_added_name)}</span> ${posBadge(t.player_added_position)}`
+      ? `<span class="add-tag pname" data-key="${esc(t.player_added_match_key || '')}" data-name="${esc(t.player_added_name)}" data-pos="${esc(t.player_added_position || '')}">+ ${esc(t.player_added_name)}</span> ${posBadge(t.player_added_position)}`
       : '—';
     const dropped = t.player_dropped_name
-      ? `<span class="drop-tag">− ${esc(t.player_dropped_name)}</span> ${posBadge(t.player_dropped_position)}`
+      ? `<span class="drop-tag pname" data-key="${esc(t.player_dropped_match_key || '')}" data-name="${esc(t.player_dropped_name)}" data-pos="${esc(t.player_dropped_position || '')}">− ${esc(t.player_dropped_name)}</span> ${posBadge(t.player_dropped_position)}`
       : '—';
     return `<tr>
       <td class="date-cell">${fmtDate(t.transaction_date)}</td>
       <td>${esc(DIVISIONS[t.division_id] || '')}</td>
-      <td class="player-cell">${esc(t.team_name || 'Unknown')}</td>
       <td>${added}</td>
       <td>${dropped}</td>
       <td class="faab-cell">${fmtMoney(t.faab_spent)}</td>
@@ -110,9 +114,12 @@ function renderLog(search = '', divisionId = '') {
   }).join('');
 
   body.innerHTML = `<div class="table-wrap"><table class="data">
-    <thead><tr><th>Date</th><th>Division</th><th>Team</th><th>Added</th><th>Dropped</th><th>FAAB</th></tr></thead>
+    <thead><tr><th>Date</th><th>Division</th><th>Added</th><th>Dropped</th><th>FAAB</th></tr></thead>
     <tbody>${trs}</tbody>
   </table></div>`;
+
+  body.querySelectorAll('.pname').forEach(el =>
+    el.addEventListener('click', () => openPlayerModal(el.dataset.key, el.dataset.name, el.dataset.pos)));
 }
 
 // ---------- Ownership ----------
@@ -130,7 +137,7 @@ function renderOwnership(search = '') {
 
   const items = rows.slice(0, 300).map(p => {
     const pct = Number(p.ownership_pct) || 0;
-    return `<div class="own-row">
+    return `<div class="own-row pname" data-key="${esc(p.match_key || '')}" data-name="${esc(p.player_name || '')}" data-pos="${esc(p.player_position || '')}">
       <div class="own-name">
         ${posBadge(p.player_position)}
         <span>${esc(p.player_name || 'Unknown')}</span>
@@ -142,6 +149,54 @@ function renderOwnership(search = '') {
   }).join('');
 
   body.innerHTML = `<div class="table-wrap" style="border:none;background:none;">${items}</div>`;
+
+  body.querySelectorAll('.pname').forEach(el =>
+    el.addEventListener('click', () => openPlayerModal(el.dataset.key, el.dataset.name, el.dataset.pos)));
+}
+
+// ---------- Player modal ----------
+function openPlayerModal(matchKey, name, pos) {
+  if (!matchKey) return;
+
+  const ownRow = OWNERSHIP.find(o => o.match_key === matchKey);
+  const rosterRows = ROSTERS.filter(r => r.match_key === matchKey);
+  const rosteredIn = new Map(rosterRows.map(r => [r.division_id, r.team_name]));
+
+  const pct = ownRow ? Number(ownRow.ownership_pct) || 0 : 0;
+  const divCount = ownRow ? ownRow.divisions_rostered : rosteredIn.size;
+  const totalDivs = ownRow ? ownRow.total_active_divisions : DIV_ORDER.length;
+  const nflTeam = ownRow ? ownRow.player_nfl_team : '';
+
+  document.getElementById('pmName').textContent = name || (ownRow && ownRow.player_name) || 'Unknown player';
+  document.getElementById('pmSub').textContent = [pos, nflTeam].filter(Boolean).join(' · ') || '—';
+  document.getElementById('pmBar').style.width = pct + '%';
+  document.getElementById('pmPct').innerHTML = `${pct}%<span class="frac">${divCount}/${totalDivs} divisions</span>`;
+
+  const sleeperRow = rosterRows.find(r => r.platform === 'sleeper');
+  const headshot = document.getElementById('pmHeadshot');
+  if (sleeperRow && sleeperRow.player_id) {
+    headshot.src = `https://sleepercdn.com/content/nfl/players/${sleeperRow.player_id}.jpg`;
+    headshot.onerror = () => { headshot.src = 'https://sleepercdn.com/images/v2/icons/player_default.webp'; };
+  } else {
+    headshot.src = 'https://sleepercdn.com/images/v2/icons/player_default.webp';
+  }
+
+  const leagueRows = DIV_ORDER.map(id => {
+    const owner = rosteredIn.get(id);
+    return `<div class="pm-league-row">
+      <span class="div-name">${esc(DIVISIONS[id])}</span>
+      ${owner
+        ? `<span class="status owned">Rostered — ${esc(owner)}</span>`
+        : `<span class="status available">Available</span>`}
+    </div>`;
+  }).join('');
+  document.getElementById('pmLeagues').innerHTML = leagueRows || '<div class="empty-state">No division data yet.</div>';
+
+  document.getElementById('playerModal').style.display = 'flex';
+}
+
+function closePlayerModal() {
+  document.getElementById('playerModal').style.display = 'none';
 }
 
 // ---------- FAAB Spending ----------
@@ -190,6 +245,12 @@ async function init() {
     renderLog(document.getElementById('logSearch').value, e.target.value));
   document.getElementById('ownSearch').addEventListener('input', e => renderOwnership(e.target.value));
   document.getElementById('faabDivisionFilter').addEventListener('change', e => renderFaab(e.target.value));
+
+  document.getElementById('pmClose').addEventListener('click', closePlayerModal);
+  document.getElementById('playerModal').addEventListener('click', e => {
+    if (e.target.id === 'playerModal') closePlayerModal();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePlayerModal(); });
 
   try {
     await loadData();

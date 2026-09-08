@@ -365,6 +365,10 @@ async function main() {
       } else if (d.sleeper_id) {
         const sleeperLeagueId = String(d.sleeper_id).trim();
         const userMap = await sleeperUsers(sleeperLeagueId);
+        // Fetch rosters BEFORE transactions so we can resolve roster_id -> owner_id -> display_name.
+        // (adds/drops on a transaction are keyed by roster_id, not user_id, so userMap alone can't resolve it.)
+        const rosters = await sleeperRosters(sleeperLeagueId);
+        const ownerOfRoster = new Map(rosters.map(r => [String(r.roster_id), String(r.owner_id)]));
         const rawTxns = await sleeperTransactions(sleeperLeagueId, currentWeek);
 
         txnRows = rawTxns
@@ -377,11 +381,12 @@ async function main() {
             const rosterId = addId ? t.adds[addId] : (dropId ? t.drops[dropId] : (t.roster_ids || [])[0]);
             const added = addId ? (sleeperMap.get(addId) || {}) : {};
             const dropped = dropId ? (sleeperMap.get(dropId) || {}) : {};
+            const ownerId = rosterId != null ? ownerOfRoster.get(String(rosterId)) : null;
             return {
               division_id: d.id, platform: 'sleeper', transaction_id: t.transaction_id,
               week: t._week, transaction_date: t.created ? new Date(t.created).toISOString() : null,
               franchise_id: rosterId != null ? String(rosterId) : null,
-              team_name: userMap.get(String(rosterId)) || null,
+              team_name: ownerId ? (userMap.get(ownerId) || null) : null,
               player_added_id: addId, player_added_name: added.full_name || null,
               player_added_position: added.position || null,
               player_added_match_key: addId ? matchKey(added.full_name, added.position) : null,
@@ -393,7 +398,6 @@ async function main() {
             };
           });
 
-        const rosters = await sleeperRosters(sleeperLeagueId);
         rosterRows = [];
         rosters.forEach(r => {
           (r.players || []).forEach(playerId => {
