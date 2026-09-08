@@ -245,11 +245,12 @@ async function mflTransactions(mflId, year, cookie) {
   arr.forEach(t => {
     const parts = String(t.transaction || '').split('|');
     if (t.type === 'BBID_WAIVER') {
-      const [addedId, bidStr, droppedCsv] = parts;
+      const [addedIdRaw, bidStr, droppedCsv] = parts;
+      const addedId = (addedIdRaw || '').replace(/,$/, '').trim() || null;
       out.push({
         transaction_id: `${t.timestamp}-${t.franchise}-${addedId}`,
         timestamp: t.timestamp, franchise: t.franchise,
-        added: (addedId || '').trim() || null,
+        added: addedId,
         dropped: (droppedCsv || '').replace(/,$/, '').split(',').map(s => s.trim()).filter(Boolean),
         faab_spent: bidStr ? parseFloat(bidStr) : 0
       });
